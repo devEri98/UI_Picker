@@ -146,8 +146,9 @@ I numeri sono pixel CSS arrotondati all’intero più vicino. `scrollX` e `scrol
 
 ```ts
 interface UiRedactionV1 {
-  readonly path: string;
-  readonly action: "omitted" | "masked" | "truncated";
+  // CandidateField è esportato dal contratto API pubblico.
+  readonly field: CandidateField;
+  readonly action: "omitted" | "replaced" | "truncated";
   readonly reason:
     | "default-policy"
     | "sensitive-element"
@@ -156,7 +157,7 @@ interface UiRedactionV1 {
 }
 ```
 
-`path` è un JSON Pointer RFC 6901 riferito al target. La metadata indica che una trasformazione è avvenuta senza conservare il valore originale. Le redazioni sono ordinate per `path` e poi per `action`.
+`field` è il percorso logico canonico definito nel contratto API e può riferirsi anche a una proprietà omessa dal JSON. Non è un JSON Pointer. La metadata indica che una trasformazione è avvenuta senza conservare il valore originale. Le redazioni sono ordinate per `field` e poi per `action`.
 
 ## Esempio JSON
 
@@ -204,7 +205,7 @@ interface UiRedactionV1 {
       },
       "redactions": [
         {
-          "path": "/location/search",
+          "field": "location.search",
           "action": "omitted",
           "reason": "default-policy"
         }
@@ -219,7 +220,7 @@ interface UiRedactionV1 {
 - proprietà serializzate nell’ordine definito dallo schema;
 - target nell’ordine di cattura;
 - `states` e `references` secondo allowlist, non secondo ordine DOM;
-- `redactions` ordinate per `path` e `action`;
+- `redactions` ordinate per `field` e `action`;
 - spazi interni del testo collassati;
 - stringhe normalizzate in Unicode NFC;
 - campi opzionali senza valore omessi;
@@ -228,9 +229,9 @@ interface UiRedactionV1 {
 - formatter text indipendente dalla locale del sistema;
 - clock iniettabile per test riproducibili.
 
-ID, classi, attributi e segmenti del percorso vengono sottoposti a escaping deterministico prima della composizione. I selettori usano `CSS.escape` dove applicabile e una funzione dedicata per i valori degli attributi; virgolette, backslash e caratteri di controllo sono coperti da test.
+ID, classi, attributi e segmenti del percorso vengono sottoposti a escaping deterministico prima della composizione. I selettori usano `CSS.escape` dove applicabile e una funzione dedicata per i valori degli attributi; virgolette, backslash e caratteri di controllo sono coperti da test. Algoritmi e budget sono normativi in [`extraction-spec.md`](extraction-spec.md).
 
-“Deterministico” significa che lo stesso modello sanificato produce gli stessi byte. La cattura reale include intenzionalmente `capturedAt`, quindi due catture in momenti diversi restano eventi distinti.
+“Deterministico” significa che lo stesso modello sanificato produce gli stessi byte. A parità di DOM, configurazione, resolver e clock l’estrazione è stabile. La cattura reale include intenzionalmente `capturedAt`, quindi due eventi con clock diverso restano distinti.
 
 ## Evoluzione
 

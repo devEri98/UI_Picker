@@ -9,7 +9,9 @@ Il testo visibile, la rotta e gli attributi possono contenere dati personali o s
 
 ## Decisione
 
-Applicare allowlist, redazione, normalizzazione e limiti prima di creare `UiTargetV1`. Conservare nella sessione e nello snapshot di undo soltanto oggetti sanificati. Non esporre candidati grezzi in log, callback o eventi pubblici.
+Applicare allowlist, redazione, normalizzazione e limiti prima di creare `UiTargetV1`. Conservare nella sessione e nello snapshot di undo soltanto oggetti sanificati. Non esporre candidati grezzi in log, subscriber o eventi pubblici.
+
+Eccezione esplicita: il custom redactor è codice privilegiato e trusted del consumer e riceve una stringa grezza alla volta. Non riceve nodi DOM o globali. Il resolver custom costituisce un trust boundary separato perché riceve un `Element`; il suo output viene trattato come non fidato e sanificato.
 
 Default:
 
@@ -29,7 +31,7 @@ Default:
 
 - una redazione non può essere annullata senza una nuova cattura;
 - preview, text e JSON condividono la stessa base sanificata;
-- callback personalizzate devono essere sincrone e non ricevono accesso a cookie, storage o stato framework.
+- callback personalizzate devono essere sincrone e non ricevono accesso dalla libreria a cookie, storage o stato framework; possono comunque usare autonomamente globali disponibili al codice consumer.
 
 ## Condizioni di revisione
 

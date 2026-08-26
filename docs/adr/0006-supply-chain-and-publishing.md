@@ -15,6 +15,9 @@ Il progetto verrà installato come dipendenza di sviluppo e potrà eseguire codi
 - dependency review sulle pull request a severità `moderate`;
 - GitHub Actions fissate a commit;
 - pack e smoke test del tarball;
+- build e test in job privo di OIDC;
+- trasferimento del tarball immutabile con digest SHA-256;
+- job publish separato, privilegi minimi, senza checkout di codice non fidato;
 - npm trusted publishing da environment protetto, con provenance e senza token persistenti.
 
 ## Alternative considerate

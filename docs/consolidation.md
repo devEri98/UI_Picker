@@ -1,6 +1,6 @@
 # Consolidamento del design
 
-> Stato: correzioni integrate; indipendent review pendente.
+> Stato: Gate B chiuso dopo review indipendente e riverifica.
 
 ## Risultato
 
@@ -9,34 +9,40 @@
 - tutti i finding tecnici hanno una correzione e un test richiesto;
 - un rischio residuo Medium è dichiarato e accettato dal perimetro privacy approvato;
 - technical design, schema, UX, sicurezza e ADR sono allineati;
-- lo sviluppo non parte finché non viene completata la review indipendente e aggiornato Node locale.
+- tutti i finding indipendenti sono stati riverificati e chiusi; resta l'aggiornamento di Node locale prima dello scaffold.
 
 ## Correzioni principali integrate
 
 - ESM nativo con `NodeNext` e import `.js`;
 - snapshot di sessione profondamente immutabili;
-- redazioni indirizzate tramite JSON Pointer;
+- redazioni riferite a campi logici canonici, anche quando il valore viene omesso dal JSON;
 - Unicode NFC ed escaping deterministico;
 - reducer sincrono per le mutazioni e snapshot copy espliciti;
 - undo accessibile senza timeout;
-- fallback clipboard con focus recovery;
+- fallback clipboard come dialog modale con focus trap e focus recovery;
+- uscita fail-safe dalla selezione temporanea su blur, documento nascosto e perdita del tasto modificatore;
+- limiti espliciti per singolo target, sessione, collezioni e stringhe;
+- attraversamento DOM normativo che esclude interi sottoalberi sensibili;
+- contratti pubblici completi, resolver validato e callback personalizzate dichiarate trusted;
+- requisiti UX atomici con matrice focus e prove WCAG 2.2 AA;
 - Shadow DOM `open` per il pannello;
-- supply-chain policy e pubblicazione con provenance;
-- verifica Chrome ed Edge branded.
+- supply-chain policy e pubblicazione separata con digest immutabile e provenance;
+- verifica Chrome ed Edge Stable branded su Windows 11;
+- esclusione production provata sul grafo dei moduli e tramite mutation fixture.
 
 ## Rischio residuo accettato
 
-**Scenario:** il testo visibile può contenere dati personali non riconoscibili automaticamente.
+**Scenario:** qualsiasi stringa DOM o resolver ammessa—pathname, ID, classi, attributi, testo e nomi componente—può contenere dati personali non riconoscibili automaticamente.
 
 **Motivo dell’accettazione:** eliminare il testo dal profilo predefinito ridurrebbe sostanzialmente la capacità di riconoscere il target, che è parte del valore principale.
 
-**Controlli:** ambienti non production, massimo 80 caratteri, redazione, preset strict, anteprima, copia esplicita e nessuna rete.
+**Controlli:** ambienti non production, budget, redazione, preset strict richiesto con dati realistici, anteprima, copia esplicita e nessuna rete nel codice della libreria.
 
 **Condizione di riapertura:** uso su staging con dati reali non controllati, integrazione remota o richiesta di copia automatica.
 
-## Gate restante
+## Esito del gate
 
-Una review indipendente deve verificare almeno:
+Gli stessi revisori indipendenti hanno riverificato le correzioni su:
 
 - coerenza dei trust boundary;
 - impossibilità di conservare valori grezzi;
@@ -44,3 +50,5 @@ Una review indipendente deve verificare almeno:
 - sufficienza dell’esclusione production;
 - completezza della matrice di test;
 - complessità accidentale introdotta dal design.
+
+Verdetti finali: security/privacy **PASS**, architecture/API **PASS**, UX/quality **PASS**. Il Gate B è chiuso a livello documentale; le prove prescritte diventano obbligatorie durante l'implementazione.

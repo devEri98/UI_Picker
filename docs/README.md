@@ -8,9 +8,13 @@ La documentazione distingue requisiti approvati, design ancora in evoluzione ed 
 | [Product e UX design](ux-design.md) | Approvato per l’MVP | Journey, stati, pannello, microcopy, accessibilità e recovery. |
 | [Technical design](technical-design.md) | Approvato, hardening applicato | Toolchain, package, API, dati, build, test e CI. |
 | [Schema UiTarget v1](schema-v1.md) | Approvato, hardening applicato | Contratto macchina e regole deterministiche. |
+| [Contratto API](api-contract.md) | Approvato nel Gate B | Tipi pubblici, privacy, resolver, lifecycle e copy. |
+| [Specifica estrazione DOM](extraction-spec.md) | Approvato nel Gate B | Algoritmi normativi, subtree sensibili e budget. |
+| [Quality gate](quality-gates.md) | Approvato nel Gate B | Browser/OS, accessibilità, CI, release e metriche. |
 | [Tracciabilità MVP](traceability.md) | Baseline | Requisiti, responsabilità ed evidenze previste. |
 | [Design review e hardening](reviews/hardening-2026-08-26.md) | Correzioni integrate | Finding Security, Architecture, Data, UX e Operations. |
-| [Consolidamento](consolidation.md) | Review indipendente pendente | Correzioni, rischio residuo e gate restante. |
+| [Review indipendente](reviews/independent-review-2026-08-26.md) | Completata | Finding deduplicati, correzioni e verdetti finali. |
+| [Consolidamento](consolidation.md) | Gate B chiuso | Correzioni, rischio residuo e condizioni di implementazione. |
 | [Architettura iniziale](architecture.md) | Sintesi | Confini tecnici e collegamento ai documenti correnti. |
 | [Privacy e sicurezza](security-and-privacy.md) | Baseline approvata | Dati ammessi, esclusioni e invarianti di sicurezza. |
 | [Roadmap](roadmap.md) | Proposta | Sequenza delle vertical slice e gate. |

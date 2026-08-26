@@ -14,7 +14,8 @@ Una condizione runtime può impedire l’avvio del picker senza rimuoverne il co
 - boot predefinito no-op;
 - demo Angular con file replacement soltanto per ambienti consentiti;
 - import dinamico del runtime reale nel boot development;
-- build production verificata cercando firme univoche e tramite test comportamentale;
+- build production verificata sul grafo completo dei moduli e dei chunk, affiancata da marker indipendenti e test comportamentale;
+- mutation fixture che rende il gate rosso quando il runtime viene intenzionalmente reintrodotto nel grafo production;
 - documentazione consumer che distingue disabilitazione runtime ed esclusione dal bundle.
 
 ## Alternative considerate
@@ -26,7 +27,7 @@ Una condizione runtime può impedire l’avvio del picker senza rimuoverne il co
 ## Conseguenze
 
 - l’integrazione richiede un piccolo file boot nel consumer;
-- la demo deve costruire sia development sia production in CI;
+- la demo deve costruire sia development sia production in CI ed esportare stats/metafile verificabili;
 - non si promette automaticamente l’esclusione per ogni bundler: si fornisce un pattern e un controllo riproducibile.
 
 ## Condizioni di revisione

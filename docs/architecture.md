@@ -1,6 +1,6 @@
 # Architettura iniziale
 
-> Stato: sostituito dal technical design proposto per approvazione. Questo documento resta una sintesi; i dettagli sono in [`technical-design.md`](technical-design.md), [`schema-v1.md`](schema-v1.md) e negli ADR.
+> Stato: sintesi consolidata. I contratti normativi sono in [`technical-design.md`](technical-design.md), [`api-contract.md`](api-contract.md), [`extraction-spec.md`](extraction-spec.md), [`schema-v1.md`](schema-v1.md), [`quality-gates.md`](quality-gates.md) e negli ADR.
 
 ## Principi
 
@@ -36,21 +36,15 @@ flowchart LR
 
 `core` non deve conoscere DOM, globali browser, Angular, clipboard o pannello. `browser` usa contratti del core e riceve un resolver. L’adapter Angular implementa quel contratto senza spostare logica framework-specifica negli altri package.
 
-## Contratto concettuale del resolver
+## Contratto del resolver
 
 ```ts
 interface ComponentResolver {
-  resolve(element: Element): ComponentReference | null;
-}
-
-interface ComponentReference {
-  name: string;
-  host: Element;
-  selector?: string;
+  resolve(element: Element): ComponentResolutionResult;
 }
 ```
 
-Il contratto definitivo dipenderà dal design dello schema `UiTarget` v1.
+Il contratto completo, i risultati `resolved`/`unavailable`, i limiti e il trust boundary sono definiti in [`api-contract.md`](api-contract.md). L'adapter Angular dichiara `@angular/core: ^22.0.0` come peer dependency.
 
 ## Decisioni già approvate
 
@@ -62,7 +56,7 @@ Il contratto definitivo dipenderà dal design dello schema `UiTarget` v1.
 - formati text e JSON versionato;
 - sessione in memoria;
 - licenza MIT;
-- Chrome ed Edge come browser inizialmente supportati.
+- Chrome ed Edge Stable su Windows 11 come matrice inizialmente supportata.
 
 ## Decisioni consolidate nel technical design
 
@@ -74,12 +68,13 @@ Il contratto definitivo dipenderà dal design dello schema `UiTarget` v1.
 - Vitest e Playwright;
 - redazione prima della sessione;
 - query string e hash esclusi per default;
-- boot no-op e file replacement per la demo production.
+- boot no-op e file replacement per la demo production;
+- verifica production sul grafo dei moduli con mutation fixture;
+- budget byte e collezioni definiti nella specifica di estrazione.
 
 ## Decisioni ancora aperte
 
 - controllo effettivo dello scope npm `@ui-target-picker` prima della pubblicazione;
-- size budget iniziale.
 
 Il pannello usa uno Shadow DOM `open`. Shadow DOM dell’applicazione ospitante e iframe non vengono attraversati nell’MVP.
 

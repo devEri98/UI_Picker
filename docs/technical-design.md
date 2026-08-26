@@ -129,52 +129,17 @@ flowchart LR
 - gli import relativi sorgente usano estensioni `.js`, così l’ESM emesso funziona anche senza un bundler;
 - i tre package condividono la stessa versione durante l’alpha e vengono rilasciati insieme.
 
-## API browser concettuale
+## API browser
 
-```ts
-interface UiTargetPickerController {
-  enable(): void;
-  disable(): void;
-  destroy(): void;
-  getState(): UiTargetPickerState;
-  getSession(): Readonly<UiTargetSessionV1>;
-  copy(format?: "text" | "json"): Promise<CopyResult>;
-}
+Il contratto normativo è in [`api-contract.md`](api-contract.md). Definisce controller, stato, lifecycle, subscriber, copy single-flight, scorciatoie, privacy policy, trust boundary e resolver.
 
-interface UiTargetPickerOptions {
-  resolver?: ComponentResolver;
-  shortcuts?: Partial<UiTargetPickerShortcuts>;
-  privacy?: Partial<PrivacyPolicy>;
-  maxTargets?: number;
-  initialFormat?: "text" | "json";
-}
-
-function createUiTargetPicker(
-  options?: UiTargetPickerOptions,
-): UiTargetPickerController;
-```
-
-`createUiTargetPicker` non installa listener finché non viene chiamato `enable`. `enable`, `disable` e `destroy` sono idempotenti. Dopo `destroy`, il controller non può essere riattivato.
-
-`getSession` restituisce uno snapshot profondamente immutabile che non condivide array o oggetti mutabili con lo store interno.
+`createUiTargetPicker` non installa listener finché non viene chiamato `enable`. Dopo `destroy`, il controller non può essere riattivato e non emette feedback tardivi.
 
 ## Contratto del resolver
 
-```ts
-interface ComponentResolver {
-  readonly adapter: string;
-  resolve(element: Element): ComponentResolution | null;
-}
+Resolver e adapter custom sono codice privilegiato del consumer perché ricevono un `Element`. Ogni output viene considerato non fidato, validato, limitato e redatto. `host` deve essere connected, nello stesso document e antenato del target; non viene serializzato. Errori o risultati invalidi omettono il componente senza impedire la cattura DOM.
 
-interface ComponentResolution {
-  readonly host: Element;
-  readonly name: string;
-  readonly selector?: string;
-  readonly ancestry: readonly string[];
-}
-```
-
-`host` serve soltanto durante l’estrazione del percorso DOM e non viene serializzato. Errori del resolver vengono isolati: il target DOM rimane catturabile e il pannello segnala la risoluzione mancante.
+L’adapter MVP dichiara `@angular/core: ^22.0.0` come peer dependency e restituisce motivi `unavailable` tipizzati.
 
 ## Pipeline dei dati
 
@@ -191,25 +156,27 @@ flowchart LR
     I --> J[Clipboard esplicita]
 ```
 
-I candidati grezzi non entrano mai nella sessione, nei log o negli eventi pubblici. La sessione conserva esclusivamente il modello già sanificato.
+I candidati grezzi non entrano mai nella sessione, undo, log, subscriber o eventi pubblici. La sola eccezione è il custom redactor privilegiato, che riceve una stringa grezza alla volta secondo il contratto dichiarato. La sessione conserva esclusivamente il modello già sanificato.
 
 ## Default privacy
 
-- preset predefinito: `balanced`; preset `strict` disponibile per disabilitare testo e riferimenti;
+- preset predefinito: `balanced`; preset `strict` sostituisce pathname, id e classi e disabilita testo e riferimenti;
 - rotta: solo `pathname`;
 - query string e hash: esclusi, opt-in con redazione obbligatoria;
-- testo visibile: normalizzato, massimo 80 caratteri, configurabile fino a disabilitazione; sempre escluso da input, textarea, select, contenteditable e controlli equivalenti;
+- testo visibile: raccolto soltanto da nodi Text ammessi, normalizzato e limitato; l’intero subtree di input, textarea, select/option, contenteditable e controlli equivalenti viene saltato anche catturando un antenato;
 - attributi: allowlist `aria-label`, `title`, `placeholder`, `data-testid`;
 - valori dei controlli: sempre esclusi e non riattivabili tramite configurazione generica;
-- HTML, cookie, storage, rete e stato framework: esclusi;
+- HTML, cookie, storage dell’app ospitante, rete e stato framework: esclusi; è ammesso soltanto uno store namespaced opzionale per versione e coordinate del pannello;
 - geometria: arrotondata a interi;
 - callback di redazione applicata a ogni stringa candidata, incluso `pathname`, prima della memorizzazione.
 
 Le opzioni non possono disabilitare gli invarianti assoluti, come la proibizione di leggere password o valori correnti dei controlli.
 
-Il preset `balanced` conserva il rischio residuo che il testo già visibile contenga dati personali. Il rischio è ridotto da ambienti controllati, limite, redazione, anteprima e copia esplicita; viene dichiarato nella checklist di release. Il preset `strict` è raccomandato per staging con dati realistici.
+Il preset `balanced` conserva il rischio residuo che qualsiasi stringa DOM o resolver ammessa—pathname, id, classi, attributi, testo o nomi componente—contenga dati personali. Il rischio è ridotto da ambienti controllati, budget, redazione, anteprima e copia esplicita; viene dichiarato nella checklist di release. Il preset `strict` è richiesto per staging con dati realistici non sintetici.
 
-La callback personalizzata riceve un candidato alla volta con tipo e percorso logico; non riceve `Element`, `Window`, storage, cookie o istanze framework. Essendo codice fornito dal consumer, rimane oltre il trust boundary del runtime.
+La callback personalizzata è codice trusted del consumer: riceve un candidato grezzo alla volta e può teoricamente conservarlo o inviarlo. Non riceve `Element`, `Window`, storage, cookie o istanze framework. La garanzia “nessuna rete” copre soltanto il codice controllato dalla libreria.
+
+Algoritmi, boundary e budget normativi sono definiti in [`extraction-spec.md`](extraction-spec.md).
 
 ## Strategia development-only
 
@@ -220,8 +187,10 @@ Il package non promette che una condizione runtime rimuova il codice dalla build
 3. entrypoint no-op disponibile come default sicuro;
 4. demo Angular con file replacement: no-op di default e boot reale soltanto nelle configurazioni consentite;
 5. import dinamico del runtime reale nel boot development;
-6. controllo automatico di più firme indipendenti, entrypoint e riferimenti al runtime nei chunk della build production;
-7. test E2E che dimostra l’assenza di UI e listener in production.
+6. controllo strutturale di stats/metafile che vieta entrypoint e moduli runtime in ogni chunk initial o lazy;
+7. scansione complementare di marker su tutti gli asset;
+8. test E2E che dimostra l’assenza di UI e listener in production;
+9. mutation fixture che importa intenzionalmente il runtime e deve far fallire il gate strutturale.
 
 Le guide per i consumer devono dichiarare che un semplice `if (production)` runtime non costituisce prova di esclusione dal bundle.
 
@@ -231,12 +200,13 @@ Le guide per i consumer devono dichiarare che un semplice `if (production)` runt
 - ogni cattura produce un target immutabile;
 - tutte le mutazioni passano da un reducer sincrono con azioni tipizzate;
 - rimozione e clear creano un singolo snapshot di undo, valido fino alla successiva mutazione della sessione o a `destroy`;
-- le copie sono serializzate per impedire che una Promise più vecchia sovrascriva un risultato più recente;
+- la copia è single-flight: mentre una Promise è pendente il comando è disabilitato e richieste ulteriori ricevono `COPY_IN_PROGRESS`;
+- dopo 10 secondi senza esito la copia torna `idle` con `COPY_TIMEOUT`; un esito tardivo viene ignorato;
 - ogni comando copy cattura immediatamente lo snapshot sanificato e il conteggio a cui si riferisce;
 - cambiare formato non modifica i target;
 - la navigazione SPA non azzera la sessione;
 - refresh, `destroy` e chiusura scheda la eliminano;
-- posizione pannello e sessione usano store separati.
+- posizione pannello e sessione usano store separati; lo store posizione contiene soltanto versione e coordinate namespaced.
 
 ## Error handling
 
@@ -248,6 +218,10 @@ type PickerError =
   | { code: "CLIPBOARD_UNAVAILABLE"; recoverable: true }
   | { code: "TARGET_NOT_SELECTABLE"; recoverable: true }
   | { code: "TARGET_LIMIT_REACHED"; recoverable: true }
+  | { code: "TARGET_TOO_LARGE"; recoverable: true }
+  | { code: "SESSION_SIZE_LIMIT_REACHED"; recoverable: true }
+  | { code: "COPY_IN_PROGRESS"; recoverable: true }
+  | { code: "COPY_TIMEOUT"; recoverable: true }
   | { code: "RESOLVER_FAILED"; recoverable: true; adapter: string }
   | { code: "CONTROLLER_DESTROYED"; recoverable: false };
 ```
@@ -268,12 +242,12 @@ Il messaggio utente viene risolto dal layer browser, mantenendo il core indipend
 
 ### Browser
 
-- estrazione con jsdom;
+- estrazione normativa con subtree sensibili annidati e canary;
 - firma, percorso e semantica;
 - esclusione valori sensibili;
 - lifecycle idempotente;
 - stato delle scorciatoie;
-- concorrenza clipboard;
+- copy single-flight, timeout, esito tardivo, reject e destroy durante Promise pendente;
 - pannello e focus.
 
 ### Angular adapter
@@ -299,20 +273,7 @@ Il messaggio utente viene risolto dal layer browser, mantenendo il core indipend
 
 ## Pipeline CI
 
-```text
-install --frozen-lockfile
-  → format:check
-  → lint
-  → typecheck / tsc --build
-  → unit + integration + coverage
-  → build packages
-  → build angular demo development/production
-  → production exclusion check
-  → E2E Chrome/Edge
-  → pnpm pack + install smoke test
-```
-
-Il pack smoke test installa i tarball prodotti in un consumer temporaneo e verifica entrypoint, tipi e assenza di file sorgente non previsti.
+Required checks, ambienti, artifact, matrice browser, accessibilità, metriche e release sono definiti in [`quality-gates.md`](quality-gates.md). Il pack smoke test installa i tarball in un consumer temporaneo senza path mapping.
 
 ## Supply chain e pubblicazione
 
@@ -322,7 +283,9 @@ Il pack smoke test installa i tarball prodotti in un consumer temporaneo e verif
 - dependency review sulle pull request con soglia `moderate`;
 - azioni GitHub fissate a commit e aggiornate tramite Dependabot;
 - package packati e verificati prima della pubblicazione;
-- pubblicazione tramite npm trusted publishing da GitHub Actions, senza token persistente e con provenance automatica;
+- build e test in job senza OIDC; tarball trasferito con digest SHA-256;
+- job publish separato con `id-token: write`, senza checkout o action superflue;
+- pubblicazione tramite npm trusted publishing, senza token persistente e con provenance automatica;
 - branch e release environment protetti prima della prima alpha pubblica.
 
 ## Criteri del gate tecnico

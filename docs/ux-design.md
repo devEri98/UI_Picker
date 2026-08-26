@@ -37,12 +37,14 @@ flowchart TD
 | Inattivo | Pannello neutro; nessun overlay. | L’applicazione ospitante funziona normalmente. |
 | Armato temporaneamente | Etichetta “Selezione temporanea”; overlay sul target corrente. | Vale soltanto mentre `Alt` è premuto. |
 | Selezione continua | Etichetta persistente “Selezione continua attiva”; overlay sul target. | Ogni click valido cattura; `Esc` o la scorciatoia disattivano. |
-| Cattura in corso | Feedback immediato sul target; nessun blocco prolungato. | Il click non raggiunge l’applicazione. |
+| Cattura in corso | Feedback immediato sul target; nessun blocco prolungato. | La sequenza pointer non raggiunge target o bubbling handler dell’applicazione. |
 | Limite raggiunto | Stato warning testuale nel pannello. | Nuove catture rifiutate fino alla rimozione di almeno un target. |
 | Errore recuperabile | Messaggio con causa e azione disponibile. | Il picker rimane utilizzabile quando possibile. |
 | Disabilitato | UI e listener rimossi. | Nessuna intercettazione dell’applicazione. |
 
 Il colore non deve essere l’unico segnale di stato: ogni condizione attiva, warning o errore usa anche testo e, dove utile, un’icona accessibile.
+
+La selezione temporanea torna fail-safe a `inattivo` su rilascio del tasto, `window.blur`, `visibilitychange` verso hidden, perdita del documento attivo e `destroy`. Al ritorno del focus non viene mai riarmata automaticamente.
 
 ## Scorciatoie
 
@@ -113,13 +115,13 @@ La rimozione singola e lo svuotamento creano un solo livello di `Annulla`, visib
 - la copia riuscita non cambia focus e produce una conferma non invasiva;
 - la copia fallita mostra causa comprensibile e recovery.
 
-Il fallback della clipboard non deve ampliare i dati raccolti. Se nessun metodo è disponibile, il pannello apre una vista con output già redatto in un controllo read-only selezionabile, titolo e istruzioni. Il focus entra nella vista e torna al pulsante `Copia tutto` quando viene chiusa.
+Il fallback della clipboard non deve ampliare i dati raccolti. Se nessun metodo è disponibile, il pannello apre un dialog modale con nome e descrizione accessibili, output già redatto in un controllo read-only selezionabile e pulsante `Chiudi`. Il focus iniziale va al controllo output, `Tab` resta nel dialog e `Esc` chiude prima il dialog senza cambiare la modalità del picker. Alla chiusura il focus torna a `Copia tutto`, oppure alla testata se il trigger non esiste più.
 
 ## Stati e recovery
 
 | Scenario | Comportamento | Microcopy proposta |
 |---|---|---|
-| Sessione vuota | Spiega come iniziare e mostra le scorciatoie correnti. | “Nessun target. Tieni premuto Alt e seleziona un elemento.” |
+| Sessione vuota | Mostra un titolo `Nessun target` con `tabindex="-1"`, istruzioni e scorciatoie correnti. | “Nessun target. Tieni premuto Alt e seleziona un elemento.” |
 | Target catturato | Aggiunge la scheda, aggiorna conteggio e annuncia il risultato. | “Target 3 aggiunto.” |
 | Limite raggiunto | Non cattura e indica la soluzione. | “Limite di 20 target raggiunto. Rimuovine uno per continuare.” |
 | Copia riuscita | Conferma quantità e formato. | “Copiati 3 target in formato Testo.” |
@@ -132,6 +134,8 @@ Il fallback della clipboard non deve ampliare i dati raccolti. Se nessun metodo 
 | Posizione ripristinata | Riporta il pannello nell’angolo iniziale. | “Posizione del pannello ripristinata.” |
 
 I messaggi devono indicare causa e possibilità di recupero. Nessun errore deve essere comunicato esclusivamente in console.
+
+Una regione `role="status"` persistente, atomica e deduplicata annuncia cattura, rimozione, undo e copia. `role="alert"` è riservato a errori operativi che richiedono intervento. Annunci rapidi vengono serializzati nell’ordine delle azioni senza ripetere lo stesso messaggio.
 
 ## Accessibilità
 
@@ -146,6 +150,15 @@ I messaggi devono indicare causa e possibilità di recupero. Nessun errore deve 
 - espansione, formato e stato continuo espongono semanticamente il proprio stato;
 - il trascinamento non è l’unico modo per recuperare o posizionare il pannello.
 
+Quando una mutazione elimina o nasconde il controllo attivo:
+
+- rimozione scheda: stesso controllo nella successiva, altrimenti precedente, altrimenti titolo focusabile `Nessun target`;
+- clear: titolo focusabile `Nessun target`;
+- collapse: toggle che ha causato la chiusura;
+- undo: focus invariato salvo attivazione esplicita.
+
+Se il pannello copre interamente l’elemento applicativo focalizzato, viene ricollocato nel corner sicuro opposto senza spostare il focus.
+
 ### Screen reader
 
 - testata del pannello identificata come regione complementare con nome “UI Target Picker”;
@@ -158,7 +171,10 @@ I messaggi devono indicare causa e possibilità di recupero. Nessun errore deve 
 
 - contrasto minimo 4.5:1 per testo normale e 3:1 per componenti e testo grande;
 - informazioni mai affidate al solo colore;
-- layout utilizzabile con zoom browser al 200%;
+- target WCAG 2.2 AA per l’interfaccia del picker;
+- layout utilizzabile a 320 CSS px e zoom browser al 400%;
+- supporto Windows forced-colors;
+- target pointer almeno 24×24 CSS px o spaziatura equivalente, 32×32 preferito;
 - movimento limitato a feedback funzionale, circa 150–250 ms;
 - `prefers-reduced-motion` elimina gli spostamenti animati non necessari;
 - animazioni basate su `transform` e `opacity`, senza spostare il layout ospitante;
@@ -186,16 +202,18 @@ La cattura da tastiera dell’MVP è limitata agli elementi che possono ricevere
 
 - flusso completo con mouse e sola tastiera;
 - screen reader almeno sul browser principale;
-- zoom 200%;
 - contrasto di testo, icone, focus, warning ed errori;
 - `prefers-reduced-motion`;
 - viewport desktop piccolo e grande;
+- reflow a 320 CSS px, zoom 400% e forced-colors;
 - pannello trascinato fuori area e successivo recupero;
 - lista vuota, 1 target, 20 target e limite superato;
 - testi, selettori e rotte anormalmente lunghi;
 - clipboard concessa, negata e indisponibile;
 - navigazione SPA e refresh;
 - host con z-index elevati, tema chiaro e tema scuro.
+
+La verifica screen reader iniziale usa NVDA con Chrome Stable su Windows 11 e uno smoke su Edge Stable, registrando versioni, commit, revisore e risultato.
 
 ## Gate della fase
 

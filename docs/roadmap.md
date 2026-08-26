@@ -16,7 +16,7 @@ La roadmap segue vertical slice verificabili. Le date verranno assegnate soltant
 
 **Uscita:** flussi e stati approvati il 26 agosto 2026.
 
-## Gate B — Technical design e hardening — review indipendente pendente
+## Gate B — Technical design e hardening — completato
 
 - schema `UiTarget` v1;
 - contratti dei package;
@@ -28,7 +28,7 @@ La roadmap segue vertical slice verificabili. Le date verranno assegnate soltant
 
 **Uscita:** nessun rischio Critical e nessun High senza decisione.
 
-Stato corrente: technical design approvato, finding integrati, nessun Critical o High aperto. Manca la seconda review da revisore indipendente.
+Stato corrente: review indipendente completata, finding deduplicati, correzioni riverificate e Gate B approvato il 26 agosto 2026.
 
 ## Implementazione proposta
 

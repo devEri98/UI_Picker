@@ -4,7 +4,7 @@ UI Target Picker è una libreria TypeScript development-only che trasforma la se
 
 Lo scopo è ridurre l’ambiguità di richieste come “modifica il riquadro in basso”: l’utente indica direttamente l’elemento e ottiene contesto utile per una chat AI, una issue o una conversazione tecnica.
 
-> Stato: **discovery completata, product e UX design in corso**. Il repository non contiene ancora una versione installabile.
+> Stato: **design consolidato e Gate B approvato**. Il repository non contiene ancora una versione installabile.
 
 ## Decisioni approvate
 
@@ -15,7 +15,7 @@ Lo scopo è ridurre l’ambiguità di richieste come “modifica il riquadro in 
 - Privacy: nessuna rete o telemetria, sessione in memoria, esclusione dei valori dei campi sensibili e redazione configurabile.
 - Produzione: attivazione esplicita e controllo automatico che il picker non sia incluso nella build production della demo.
 - Formati MVP: testo umano e JSON versionato.
-- Browser supportati inizialmente: Chrome ed Edge desktop; Firefox e Safari sperimentali fino alla verifica reale.
+- Browser supportati inizialmente: Chrome ed Edge Stable su Windows 11; Firefox, Safari e altri sistemi operativi restano sperimentali fino alla verifica reale.
 - Licenza prevista: MIT.
 
 ## MVP
@@ -53,9 +53,9 @@ L’MVP è approvabile quando:
 - non legge valori di input, password o altri campi esclusi;
 - non esegue richieste di rete e non include telemetria;
 - non lascia firme del picker nella build production della demo;
-- produce lo stesso output a parità di DOM, configurazione e stato;
+- produce la stessa estrazione a parità di DOM, configurazione e clock e gli stessi byte a parità di modello sanificato;
 - identifica correttamente i componenti Angular nei casi supportati;
-- consente selezione e copia in pochi secondi;
+- rispetta le soglie tecniche e di usabilità definite nei quality gate;
 - supera typecheck, test unitari, controlli di accessibilità ed E2E sui browser supportati.
 
 ## Documentazione
@@ -65,6 +65,9 @@ L’MVP è approvabile quando:
 - [Product e UX design](docs/ux-design.md)
 - [Technical design](docs/technical-design.md)
 - [Schema UiTarget v1](docs/schema-v1.md)
+- [Contratto API](docs/api-contract.md)
+- [Specifica estrazione DOM](docs/extraction-spec.md)
+- [Quality gate](docs/quality-gates.md)
 - [Tracciabilità MVP](docs/traceability.md)
 - [Design review e hardening](docs/reviews/hardening-2026-08-26.md)
 - [Consolidamento](docs/consolidation.md)
