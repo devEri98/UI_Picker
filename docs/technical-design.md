@@ -20,19 +20,19 @@
 | Area | Decisione |
 |---|---|
 | Runtime di sviluppo | Node.js 24 LTS, minimo `24.15.0`. |
-| Package manager | pnpm 11 tramite Corepack, versione fissata nel repository. |
+| Package manager | pnpm 11.24.0 tramite Corepack, versione fissata nel repository. |
 | Workspace | pnpm workspace con protocollo `workspace:` e lockfile condiviso. |
-| Linguaggio | TypeScript 6.0 in strict mode. |
+| Linguaggio | TypeScript 6.0.3 in strict mode. |
 | Output librerie | ESM, ES2022, dichiarazioni TypeScript e source map. |
 | Build librerie | `tsc --build` con project references, `NodeNext` ed estensioni `.js` esplicite negli import relativi; nessun bundler aggiuntivo nell’MVP. |
 | Demo | Angular 22, applicazione standalone. |
-| Unit e integration test | Vitest 4 con jsdom. |
+| Unit e integration test | Vitest 4.1.11 con jsdom 30.0.1. |
 | E2E | Playwright su Google Chrome e Microsoft Edge stable. |
 | Lint | ESLint flat config con typescript-eslint. |
 | Formattazione | Prettier, separato dal lint. |
 | CI | GitHub Actions con installazione frozen, typecheck, lint, test, build, E2E e pack verification. |
 
-Node 24 è scelto perché è LTS e soddisfa la baseline di Angular 22. Node 26 è ancora Current e non viene usato come runtime principale. Il computer locale usa attualmente Node `22.13.0`, inferiore ai requisiti di Angular 22: dovrà essere aggiornato prima dello scaffold.
+Node 24 è scelto perché è LTS e soddisfa la baseline di Angular 22. Node 26 è ancora Current e non viene usato come runtime principale. La baseline è stata riverificata il 26 agosto 2026 sulle fonti ufficiali. Il computer locale usa Node `24.19.0`, installato nella directory utente e conforme ai requisiti di Angular 22.
 
 ## Struttura del workspace
 

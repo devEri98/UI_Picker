@@ -1,0 +1,10 @@
+node_modules/
+.cache/
+dist/
+coverage/
+artifacts/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.DS_Store
+Thumbs.db

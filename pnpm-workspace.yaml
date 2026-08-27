@@ -1,0 +1,9 @@
+packages:
+  - packages/*
+  - examples/*
+
+minimumReleaseAge: 1440
+
+onlyBuiltDependencies:
+  # Vite/Vitest requires the platform binary installed by esbuild.
+  - esbuild

@@ -22,7 +22,7 @@ Non creare bundle UMD o CommonJS nell’MVP. Non usare un bundler per le libreri
 ## Conseguenze
 
 - i consumer devono usare una toolchain capace di risolvere ESM ed `exports`;
-- l’adapter Angular non ha una dipendenza runtime da `@angular/core` nell’MVP;
+- l’adapter Angular non importa `@angular/core` a runtime nell’MVP, ma dichiara `@angular/core: ^22.0.0` come peer dependency per esprimere la matrice supportata;
 - se in futuro verranno introdotti artefatti Angular compilati, il package dovrà passare ad Angular Package Format e partial compilation.
 
 ## Condizioni di revisione
