@@ -4,6 +4,7 @@ La documentazione distingue requisiti approvati, design ancora in evoluzione ed 
 
 | Documento | Stato | Scopo |
 |---|---|---|
+| [Uso della libreria](usage.md) | Implementato | API disponibile oggi, opzioni, preset e invarianti. |
 | [Requisiti di prodotto](product-requirements.md) | Approvato per l’MVP | Problema, utenti, requisiti, non-goals e criteri di successo. |
 | [Product e UX design](ux-design.md) | Approvato per l’MVP | Journey, stati, pannello, microcopy, accessibilità e recovery. |
 | [Technical design](technical-design.md) | Approvato, hardening applicato | Toolchain, package, API, dati, build, test e CI. |

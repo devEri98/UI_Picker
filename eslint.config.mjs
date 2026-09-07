@@ -19,6 +19,21 @@ export default tseslint.config(
     },
   },
   {
+    files: ["**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          args: "all",
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+          varsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+  {
     files: ["**/*.mjs"],
     ...tseslint.configs.disableTypeChecked,
     languageOptions: {

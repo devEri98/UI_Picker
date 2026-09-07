@@ -4,7 +4,7 @@ UI Target Picker è una libreria TypeScript development-only che trasforma la se
 
 Lo scopo è ridurre l’ambiguità di richieste come “modifica il riquadro in basso”: l’utente indica direttamente l’elemento e ottiene contesto utile per una chat AI, una issue o una conversazione tecnica.
 
-> Stato: **design consolidato e Gate B approvato**. Il repository non contiene ancora una versione installabile.
+> Stato: **core ed estrazione DOM implementati**. I package restano privati: non c’è ancora una versione pubblicata su npm, né overlay, pannello o adapter Angular.
 
 ## Decisioni approvate
 
@@ -17,6 +17,48 @@ Lo scopo è ridurre l’ambiguità di richieste come “modifica il riquadro in 
 - Formati MVP: testo umano e JSON versionato.
 - Browser supportati inizialmente: Chrome ed Edge Stable su Windows 11; Firefox, Safari e altri sistemi operativi restano sperimentali fino alla verifica reale.
 - Licenza prevista: MIT.
+
+## Cosa funziona oggi
+
+```ts
+import { createTargetExtractor } from "@ui-target-picker/browser";
+import { createSessionStore, formatSession } from "@ui-target-picker/core";
+
+const extractor = createTargetExtractor({ privacy: { preset: "balanced" } });
+const session = createSessionStore();
+
+const result = extractor.extract(document.querySelector("button")!);
+if (result.ok) {
+  session.add(result.value);
+}
+
+const output = formatSession(session.getSession(), "text");
+```
+
+```text
+[UI-TARGET 1]
+catturato:    10:24:31 UTC
+rotta:        /orders/import
+elemento:     button.rail__groupheader
+percorso DOM: [data-testid="group"] > [data-testid="group-toggle"]
+ruolo:        button
+stato:        type="button", aria-expanded="false"
+testo:        "Brand non riconosciuto"
+riferimenti:  data-testid="group-toggle"
+box:          353x54 px @ x:413, y:588 - viewport 1920x945
+```
+
+Implementato: schema `UiTarget` v1, normalizzazione, policy privacy `balanced`/`strict`, redattore personalizzato, session store con limiti e undo, formatter testo e JSON deterministici, estrazione DOM con boundary sensibili e contratto del resolver di componente.
+
+Da fare: overlay e selezione con puntatore e tastiera, pannello accessibile, clipboard, adapter Angular, demo e gate della build production.
+
+Dettagli in [Uso della libreria](docs/usage.md).
+
+## Sviluppo
+
+```bash
+pnpm install && pnpm typecheck && pnpm lint && pnpm test && pnpm build
+```
 
 ## MVP
 
@@ -61,6 +103,7 @@ L’MVP è approvabile quando:
 ## Documentazione
 
 - [Indice della documentazione](docs/README.md)
+- [Uso della libreria](docs/usage.md)
 - [Requisiti di prodotto](docs/product-requirements.md)
 - [Product e UX design](docs/ux-design.md)
 - [Technical design](docs/technical-design.md)
@@ -82,4 +125,4 @@ UI Target Picker non sostituisce DevTools, gli inspector dei framework o i test 
 
 ## Licenza
 
-Il progetto sarà distribuito con licenza MIT. Il file di licenza verrà aggiunto insieme allo scaffold iniziale, prima della prima distribuzione.
+MIT, vedi [LICENSE](LICENSE).

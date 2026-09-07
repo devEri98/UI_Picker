@@ -30,12 +30,12 @@ La roadmap segue vertical slice verificabili. Le date verranno assegnate soltant
 
 Stato corrente: review indipendente completata, finding deduplicati, correzioni riverificate e Gate B approvato il 26 agosto 2026.
 
-## Implementazione proposta
+## Implementazione
 
-1. Baseline repository, workspace e CI.
-2. Schema `UiTarget` v1 e formatter deterministici.
-3. Estrazione DOM e redazione indipendenti dal framework.
-4. Session store con limite configurabile.
+1. ~~Baseline repository, workspace e CI.~~ **Fatto.**
+2. ~~Schema `UiTarget` v1 e formatter deterministici.~~ **Fatto** — `core`: schema, canonical JSON, formatter testo e JSON.
+3. ~~Estrazione DOM e redazione indipendenti dal framework.~~ **Fatto** — `core`: policy e motore di redazione; `browser`: firma, percorso DOM, semantica, testo con boundary sensibili e geometria.
+4. ~~Session store con limite configurabile.~~ **Fatto** — limite target, budget byte con riduzione deterministica e undo singolo.
 5. Overlay e selezione browser.
 6. Clipboard e gestione degli errori.
 7. Pannello accessibile.
@@ -44,6 +44,8 @@ Stato corrente: review indipendente completata, finding deduplicati, correzioni 
 10. Controllo automatico della build production.
 11. E2E Chrome ed Edge e verifica manuale dei flussi principali.
 12. Packaging e release `0.1.0-alpha`.
+
+Il contratto implementato è descritto in [`usage.md`](usage.md). Il prossimo slice verificabile è il punto 5: overlay, state machine del puntatore e scorciatoie.
 
 ## Dopo l’MVP
 
