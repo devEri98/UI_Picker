@@ -60,6 +60,14 @@ Dettagli in [Uso della libreria](docs/usage.md).
 pnpm install && pnpm typecheck && pnpm lint && pnpm test && pnpm build
 ```
 
+### Flusso git
+
+- `main`: branch di release, sempre verde.
+- `develop`: integrazione dello sviluppo corrente; parte da `main` e ci rientra a slice chiusa.
+- `feature/...`: una slice della roadmap, aperta da `develop` e richiusa su `develop`.
+
+La CI gira su ogni pull request e su ogni push verso `main` e `develop`.
+
 ## MVP
 
 L’MVP comprenderà:
