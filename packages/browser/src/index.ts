@@ -17,18 +17,21 @@ export {
 export {
   COPY_TIMEOUT_MS,
   createUiTargetPicker,
-  type ControllerDestroyedError,
-  type CopyResult,
-  type CopyState,
-  type Lifecycle,
-  type LifecycleResult,
-  type SelectionMode,
-  type StateListener,
   type UiTargetPickerController,
   type UiTargetPickerOptions,
-  type UiTargetPickerState,
-  type Unsubscribe,
 } from "./controller.js";
+
+export type {
+  ControllerDestroyedError,
+  CopyResult,
+  CopyState,
+  Lifecycle,
+  LifecycleResult,
+  SelectionMode,
+  StateListener,
+  UiTargetPickerState,
+  Unsubscribe,
+} from "./controller-types.js";
 
 export { escapeAttributeValue, escapeIdentifier } from "./css.js";
 
@@ -66,9 +69,37 @@ export { collectVisibleText } from "./extract/visible-text.js";
 
 export { createOverlay, type Overlay } from "./overlay.js";
 
+export { createPanel, type Panel, type PanelHandlers } from "./panel/panel.js";
+
+export {
+  clampPosition,
+  createPositionStore,
+  defaultPosition,
+  PANEL_MARGIN,
+  PANEL_WIDTH,
+  type PanelPosition,
+  type PositionStore,
+} from "./panel/position.js";
+
+export {
+  copySucceeded,
+  errorMessage,
+  sessionCleared,
+  targetAdded,
+  targetRemoved,
+  undone,
+  EMPTY_HINT,
+  EMPTY_TITLE,
+  FORMAT_LABELS,
+  POSITION_RESET,
+  REDACTED_NOTE,
+  SELECTION_LABELS,
+} from "./panel/messages.js";
+
+export { createPickerSurface, PICKER_Z_INDEX, type PickerSurface } from "./surface.js";
+
 export {
   installPointerCapture,
-  PICKER_Z_INDEX,
   type PointerCapture,
   type PointerCaptureHandlers,
 } from "./pointer.js";

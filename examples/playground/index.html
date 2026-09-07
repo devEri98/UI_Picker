@@ -67,17 +67,8 @@
       }
 
       main {
-        display: grid;
-        gap: 16px;
-        grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr);
-        align-items: start;
-        padding: 16px 24px 48px;
-      }
-
-      @media (max-width: 900px) {
-        main {
-          grid-template-columns: minmax(0, 1fr);
-        }
+        max-width: 760px;
+        padding: 16px 24px 420px;
       }
 
       section {
@@ -285,7 +276,8 @@
       <p>
         Tieni premuto <kbd>Alt</kbd> e clicca, oppure <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd>
         per la selezione continua. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Invio</kbd> cattura
-        l'elemento con il focus, <kbd>Esc</kbd> esce.
+        l'elemento con il focus, <kbd>Esc</kbd> esce. Il pannello del picker è in basso a destra:
+        trascinalo dalla testata o spostalo con le frecce.
       </p>
     </header>
 
@@ -383,39 +375,6 @@
           <p hidden>CANARY_HIDDEN</p>
           <p aria-hidden="true">CANARY_ARIA_HIDDEN</p>
         </div>
-      </section>
-
-      <section aria-labelledby="console-title">
-        <h2 id="console-title">Console del picker</h2>
-
-        <dl>
-          <dt>lifecycle</dt>
-          <dd data-state="lifecycle">—</dd>
-          <dt>selezione</dt>
-          <dd data-state="selectionMode">—</dd>
-          <dt>copia</dt>
-          <dd data-state="copyState">—</dd>
-          <dt>target</dt>
-          <dd data-state="targetCount">—</dd>
-        </dl>
-
-        <div class="controls">
-          <button type="button" data-action="toggle">Disattiva picker</button>
-          <button type="button" data-action="copy">Copia tutto</button>
-          <fieldset>
-            <legend>Formato</legend>
-            <label><input type="radio" name="format" value="text" checked /> Testo</label>
-            <label><input type="radio" name="format" value="json" /> JSON</label>
-          </fieldset>
-        </div>
-
-        <p class="hint">
-          Questa console fa parte dell'applicazione ospitante, non del picker: in selezione continua
-          anche i suoi controlli vengono catturati. Premi <kbd>Esc</kbd> prima di usarli.
-        </p>
-
-        <pre data-output>Nessun target. Tieni premuto Alt e seleziona un elemento.</pre>
-        <p class="feedback" data-feedback role="status" aria-live="polite"></p>
       </section>
     </main>
 

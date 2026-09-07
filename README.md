@@ -43,9 +43,9 @@ riferimenti:  data-testid="group-toggle"
 box:          353x54 px @ x:413, y:588 - viewport 1920x945
 ```
 
-Implementato: schema `UiTarget` v1, normalizzazione, policy privacy `balanced`/`strict`, redattore personalizzato, session store con limiti e undo, formatter testo e JSON deterministici, estrazione DOM con boundary sensibili, contratto del resolver di componente, overlay in Shadow DOM, selezione con puntatore e tastiera, controller con lifecycle, stato e subscriber, e copia negli appunti single-flight con timeout e fallback.
+Implementato: schema `UiTarget` v1, normalizzazione, policy privacy `balanced`/`strict`, redattore personalizzato, session store con limiti e undo, formatter testo e JSON deterministici, estrazione DOM con boundary sensibili, contratto del resolver di componente, overlay in Shadow DOM, selezione con puntatore e tastiera, controller con lifecycle, stato e subscriber, copia negli appunti single-flight con timeout e fallback, e pannello flottante trascinabile con schede, undo e annunci accessibili.
 
-Da fare: pannello accessibile, adapter Angular, demo e gate della build production.
+Da fare: adapter Angular, demo Angular e gate della build production.
 
 Dettagli in [Uso della libreria](docs/usage.md).
 
@@ -55,7 +55,7 @@ Dettagli in [Uso della libreria](docs/usage.md).
 pnpm install && pnpm build && pnpm demo
 ```
 
-Apre un playground su `http://127.0.0.1:4173`: un'applicazione finta con componenti annidati, campi sensibili e nodi nascosti, più una console che mostra stato, sessione e output in tempo reale. La pagina carica `packages/*/dist` direttamente tramite import map, senza bundler.
+Apre un playground su `http://127.0.0.1:4173`: un'applicazione finta con componenti annidati, campi sensibili e nodi nascosti, sopra la quale compare il pannello del picker. La pagina carica `packages/*/dist` direttamente tramite import map, senza bundler.
 
 ## Sviluppo
 

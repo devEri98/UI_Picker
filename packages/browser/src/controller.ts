@@ -12,12 +12,33 @@ import {
 } from "@ui-target-picker/core";
 
 import { isSelectableTarget } from "./boundaries.js";
+import type {
+  CopyResult,
+  CopyState,
+  Lifecycle,
+  LifecycleResult,
+  SelectionMode,
+  StateListener,
+  UiTargetPickerState,
+  Unsubscribe,
+} from "./controller-types.js";
 import { ClipboardWriteError, createClipboardWriter, type ClipboardWriter } from "./clipboard.js";
 import { createTargetExtractor, type TargetExtractor } from "./extract/index.js";
 import { readTag, significantClasses } from "./extract/element.js";
 import { createOverlay, type Overlay } from "./overlay.js";
+import { createPanel, type Panel } from "./panel/panel.js";
+import {
+  copySucceeded,
+  errorMessage,
+  sessionCleared,
+  targetAdded,
+  targetRemoved,
+  undone,
+  POSITION_RESET,
+} from "./panel/messages.js";
 import { installPointerCapture, type PointerCapture } from "./pointer.js";
 import type { ComponentResolver } from "./resolver.js";
+import { createPickerSurface, type PickerSurface } from "./surface.js";
 import {
   codeMatches,
   EXIT_SELECTION_CODE,
@@ -28,35 +49,6 @@ import {
   resolveShortcuts,
   type UiTargetPickerShortcuts,
 } from "./shortcuts.js";
-
-export type Lifecycle = "created" | "enabled" | "disabled" | "destroyed";
-export type SelectionMode = "inactive" | "temporary" | "continuous";
-export type CopyState = "idle" | "pending";
-
-export interface UiTargetPickerState {
-  readonly lifecycle: Lifecycle;
-  readonly selectionMode: SelectionMode;
-  readonly copyState: CopyState;
-  readonly targetCount: number;
-  readonly maxTargets: number;
-  readonly outputFormat: OutputFormat;
-  readonly lastError?: PickerError;
-}
-
-export type ControllerDestroyedError = {
-  readonly code: "CONTROLLER_DESTROYED";
-  readonly recoverable: false;
-};
-
-export type LifecycleResult =
-  { readonly ok: true } | { readonly ok: false; readonly error: ControllerDestroyedError };
-
-export type CopyResult =
-  | { readonly ok: true; readonly format: OutputFormat; readonly targetCount: number }
-  | { readonly ok: false; readonly error: CopyError };
-
-export type StateListener = (state: Readonly<UiTargetPickerState>) => void;
-export type Unsubscribe = () => void;
 
 export interface UiTargetPickerOptions {
   readonly resolver?: ComponentResolver;
@@ -71,6 +63,8 @@ export interface UiTargetPickerOptions {
   readonly now?: () => Date;
   /** Clipboard implementation; defaults to the browser one. Injected in tests. */
   readonly clipboard?: ClipboardWriter;
+  /** Mounts the floating panel with the picker. Defaults to true. */
+  readonly panel?: boolean;
 }
 
 export interface UiTargetPickerController {
@@ -82,6 +76,14 @@ export interface UiTargetPickerController {
   /** Selects the format used by `copy` when it is called without one. */
   setOutputFormat(format: OutputFormat): LifecycleResult;
   copy(format?: OutputFormat): Promise<CopyResult>;
+  /** Removes one target and renumbers the rest. */
+  removeTarget(index: number): LifecycleResult;
+  /** Empties the session; the picker stays usable. */
+  clearSession(): LifecycleResult;
+  /** Restores the single removal snapshot. */
+  undo(): LifecycleResult;
+  /** Brings the panel back to its initial corner. */
+  resetPanelPosition(): LifecycleResult;
   subscribe(listener: StateListener): Unsubscribe;
 }
 
@@ -143,7 +145,7 @@ export function createUiTargetPicker(
       ...(options.sensitiveSelectors === undefined
         ? {}
         : { sensitiveSelectors: options.sensitiveSelectors }),
-      ...(overlay === undefined ? {} : { pickerRoot: overlay.root }),
+      ...(surface === undefined ? {} : { pickerRoot: surface.root }),
     });
     return extractor;
   }
@@ -156,7 +158,9 @@ export function createUiTargetPicker(
   /** Invalidates the outcome of a copy that timed out or outlived the controller. */
   let copyToken = 0;
   let lastError: PickerError | undefined;
+  let surface: PickerSurface | undefined;
   let overlay: Overlay | undefined;
+  let panel: Panel | undefined;
   let pointer: PointerCapture | undefined;
   let listeners: StateListener[] = [];
   let state = buildState();
@@ -169,6 +173,7 @@ export function createUiTargetPicker(
       targetCount: session.size(),
       maxTargets: session.maxTargets,
       outputFormat,
+      canUndo: session.canUndo(),
       ...(lastError === undefined ? {} : { lastError }),
     });
   }
@@ -180,21 +185,32 @@ export function createUiTargetPicker(
       next.selectionMode === state.selectionMode &&
       next.copyState === state.copyState &&
       next.targetCount === state.targetCount &&
+      next.canUndo === state.canUndo &&
       next.outputFormat === state.outputFormat &&
       next.lastError === state.lastError
     ) {
       return;
     }
     state = next;
+    panel?.render(state, session.getSession());
     for (const listener of [...listeners]) {
       listener(state);
     }
   }
 
+  /** Panel feedback. Errors that need intervention are announced as alerts. */
+  function announce(message: string, tone: "status" | "alert" = "status"): void {
+    panel?.announce(message, tone);
+  }
+
+  function announceError(error: PickerError): void {
+    announce(errorMessage(error, session.maxTargets), "alert");
+  }
+
   function isSelectable(element: Element): boolean {
     return isSelectableTarget(element, {
       document: doc,
-      ...(overlay === undefined ? {} : { pickerRoot: overlay.root }),
+      ...(surface === undefined ? {} : { pickerRoot: surface.root }),
       ...(options.sensitiveSelectors === undefined
         ? {}
         : { sensitiveSelectors: options.sensitiveSelectors }),
@@ -225,12 +241,22 @@ export function createUiTargetPicker(
     if (!extraction.ok) {
       lastError = extraction.error;
       emit();
+      announceError(extraction.error);
       return;
     }
 
     const added = session.add(extraction.value);
     lastError = added.ok ? extraction.warnings[0] : added.error;
     emit();
+
+    if (!added.ok) {
+      announceError(added.error);
+      return;
+    }
+    announce(targetAdded(added.value.index + 1));
+    if (extraction.warnings[0] !== undefined) {
+      announceError(extraction.warnings[0]);
+    }
   }
 
   function setSelectionMode(next: SelectionMode): void {
@@ -292,6 +318,7 @@ export function createUiTargetPicker(
       } else {
         lastError = { code: "TARGET_NOT_SELECTABLE", recoverable: true };
         emit();
+        announceError(lastError);
       }
       return;
     }
@@ -398,13 +425,16 @@ export function createUiTargetPicker(
     }
     pointer?.dispose();
     pointer = undefined;
-    overlay?.destroy();
+    panel?.destroy();
+    panel = undefined;
     overlay = undefined;
+    surface?.destroy();
+    surface = undefined;
     extractor = undefined;
     selectionMode = "inactive";
   }
 
-  return {
+  const controller: UiTargetPickerController = {
     enable() {
       if (lifecycle === "destroyed") {
         return DESTROYED;
@@ -416,12 +446,33 @@ export function createUiTargetPicker(
       if (view === null) {
         return OK;
       }
-      overlay = createOverlay(doc);
+      surface = createPickerSurface(doc);
+      overlay = createOverlay(doc, surface.shadow);
+      if (options.panel !== false) {
+        panel = createPanel(doc, surface.shadow, view, {
+          copy: () => {
+            void controller.copy();
+          },
+          setFormat: (format) => {
+            controller.setOutputFormat(format);
+          },
+          remove: (index) => {
+            controller.removeTarget(index);
+          },
+          clear: () => {
+            controller.clearSession();
+          },
+          undo: () => {
+            controller.undo();
+          },
+        });
+      }
       extractor = undefined;
-      pointer = installPointer(view, overlay.root);
+      pointer = installPointer(view, surface.root);
       installGlobalListeners(view);
       lifecycle = "enabled";
       emit();
+      panel?.render(state, session.getSession());
       return OK;
     },
 
@@ -475,6 +526,57 @@ export function createUiTargetPicker(
       return OK;
     },
 
+    removeTarget(index) {
+      if (lifecycle === "destroyed") {
+        return DESTROYED;
+      }
+      const removed = session.removeAt(index);
+      if (removed === undefined) {
+        return OK;
+      }
+      emit();
+      // The removed control no longer exists: focus must land somewhere useful.
+      panel?.focusAfterRemoval(index);
+      announce(targetRemoved());
+      return OK;
+    },
+
+    clearSession() {
+      if (lifecycle === "destroyed") {
+        return DESTROYED;
+      }
+      const removedCount = session.clear();
+      if (removedCount === 0) {
+        return OK;
+      }
+      emit();
+      panel?.focusEmptyTitle();
+      announce(sessionCleared(removedCount));
+      return OK;
+    },
+
+    undo() {
+      if (lifecycle === "destroyed") {
+        return DESTROYED;
+      }
+      if (!session.undo()) {
+        return OK;
+      }
+      // Undo leaves focus where it is unless the user moved it explicitly.
+      emit();
+      announce(undone());
+      return OK;
+    },
+
+    resetPanelPosition() {
+      if (lifecycle === "destroyed") {
+        return DESTROYED;
+      }
+      panel?.resetPosition();
+      announce(POSITION_RESET);
+      return OK;
+    },
+
     async copy(format) {
       if (lifecycle === "destroyed") {
         return { ok: false, error: { code: "CONTROLLER_DESTROYED", recoverable: false } };
@@ -495,7 +597,13 @@ export function createUiTargetPicker(
         return { ok: true, format: chosen, targetCount: 0 };
       }
 
-      return runCopy(chosen, formatSession(snapshot, chosen), targetCount);
+      const result = await runCopy(chosen, formatSession(snapshot, chosen), targetCount);
+      if (result.ok) {
+        announce(copySucceeded(result.targetCount, result.format));
+      } else {
+        announceError(result.error);
+      }
+      return result;
     },
 
     subscribe(listener) {
@@ -513,4 +621,6 @@ export function createUiTargetPicker(
       };
     },
   };
+
+  return controller;
 }

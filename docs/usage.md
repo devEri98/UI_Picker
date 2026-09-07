@@ -1,6 +1,6 @@
 # Uso della libreria
 
-> Stato: **fatto**. Documenta l’API realmente implementata nei package `core` e `browser`. Pannello e adapter Angular non sono ancora implementati.
+> Stato: **fatto**. Documenta l’API realmente implementata nei package `core` e `browser`. L’adapter Angular non è ancora implementato.
 
 ## Cosa è disponibile oggi
 
@@ -17,7 +17,7 @@
 | Overlay in Shadow DOM e selezione con puntatore | `browser` | Implementato |
 | Scorciatoie configurabili e cattura da tastiera | `browser` | Implementato |
 | Copia negli appunti single-flight con timeout | `browser` | Implementato |
-| Pannello accessibile | `browser` | Da fare |
+| Pannello flottante, trascinabile e accessibile | `browser` | Implementato |
 | Adapter Angular | `angular` | Da fare |
 
 ## Playground
@@ -28,7 +28,7 @@ pnpm build && pnpm demo
 
 `examples/playground` è un banco di verifica manuale senza dipendenze: un server statico di Node serve la workspace e la pagina carica l’ESM di `packages/*/dist` tramite import map, quindi prova anche che l’output pubblicato giri senza bundler. La console della pagina espone `globalThis.uiTargetPicker` per l’ispezione manuale.
 
-La console della demo fa parte dell’applicazione ospitante, non del picker: in selezione continua anche i suoi controlli vengono catturati. Finché il pannello non esiste, esci con `Esc` prima di usarli.
+Il pannello del picker vive dentro lo Shadow DOM del picker, quindi non viene mai catturato. I controlli dell’applicazione ospitante sì: è il comportamento atteso.
 
 ## Picker completo
 
@@ -57,6 +57,24 @@ picker.destroy();
 `createUiTargetPicker` non installa nessun listener finché non chiami `enable`, e l’import del modulo non ha side effect. `enable`, `disable` e `destroy` sono idempotenti; dopo `destroy` il controller non è riattivabile, la sessione è vuota e i subscriber sono rimossi.
 
 `copy` scrive negli appunti il formato corrente, oppure quello passato come argomento; `setOutputFormat` cambia il formato predefinito senza toccare i target.
+
+### Pannello
+
+Il pannello si monta con `enable` e vive nello stesso Shadow DOM `open` dell’overlay. Passa `panel: false` per usare il controller senza UI.
+
+| Elemento | Comportamento |
+|---|---|
+| Testata | Nome, stato del picker, conteggio `N/20` e riduci/espandi. |
+| Trascinamento | Solo dalla testata, con soglia di 4 px. La posizione finisce in `localStorage` sotto `ui-target-picker:panel-position`, separata dalla sessione. |
+| Tastiera | Con la testata focalizzata, le frecce spostano di 8 px e `Shift`+freccia di 32 px. |
+| Posizione iniziale | Angolo in basso a destra, ancorato in CSS. `Ripristina posizione` ci torna sempre. |
+| Schede | Numerate in ordine di cattura, con componente o firma, rotta, testo e nota di redazione. Espandibili sul dettaglio completo. |
+| Azioni | `Copia tutto` come unica azione primaria, formato adiacente, `Svuota sessione` e `Annulla` fra le secondarie. |
+| Annuncio | Una regione `role="status"` per cattura, rimozione, undo e copia; `role="alert"` per gli errori che richiedono intervento. |
+
+Focus dopo una mutazione: la rimozione di una scheda porta il focus sullo stesso controllo della successiva, altrimenti della precedente, altrimenti sul titolo focalizzabile `Nessun target`; lo svuotamento porta al titolo; la riduzione lascia il focus sul toggle che l’ha causata; l’undo non sposta il focus.
+
+Il controller espone `removeTarget`, `clearSession`, `undo` e `resetPanelPosition`, così la stessa sessione resta guidabile anche senza pannello.
 
 ### Copia
 

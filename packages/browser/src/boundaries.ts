@@ -38,9 +38,26 @@ function isContentEditable(element: Element): boolean {
   return attribute !== null && attribute !== "false";
 }
 
-/** True when the element belongs to the picker's own UI. */
+/**
+ * True when the node belongs to the picker's own UI.
+ *
+ * `contains` stops at a shadow boundary, so the picker's own panel would look
+ * like application content once it holds interactive elements. The walk climbs
+ * out of every shadow root through its host before giving up.
+ */
 export function isPickerNode(node: Node, pickerRoot: Node | undefined): boolean {
-  return pickerRoot !== undefined && (pickerRoot === node || pickerRoot.contains(node));
+  if (pickerRoot === undefined) {
+    return false;
+  }
+  let current: Node | null = node;
+  while (current !== null) {
+    if (current === pickerRoot || pickerRoot.contains(current)) {
+      return true;
+    }
+    const root = current.getRootNode();
+    current = root !== current && "host" in root ? (root as ShadowRoot).host : null;
+  }
+  return false;
 }
 
 /**

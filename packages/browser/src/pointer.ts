@@ -1,8 +1,5 @@
 import { isPickerNode } from "./boundaries.js";
 
-/** Above every realistic application overlay, including the Angular CDK. */
-export const PICKER_Z_INDEX = 2147483000;
-
 export interface PointerCaptureHandlers {
   /**
    * Whether the picker is currently armed.
@@ -86,7 +83,13 @@ export function installPointerCapture(
   }
 
   function onPointerDown(event: PointerEvent): void {
-    if (!handlers.isArmed() || !event.isPrimary || event.button !== 0) {
+    if (!handlers.isArmed()) {
+      // A new sequence starts: the click of the previous one is never arriving,
+      // so the pending suppression must not eat an unrelated click later on.
+      swallowNextClick = false;
+      return;
+    }
+    if (!event.isPrimary || event.button !== 0) {
       return;
     }
     const target = validTargetOf(event);

@@ -1,125 +1,28 @@
-import { PICKER_Z_INDEX } from "./pointer.js";
-
-/**
- * Overlay styles.
- *
- * Everything lives in an open shadow root so the host application's cascade
- * cannot reach it and the picker cannot leak styles into the application. The
- * root is inert to the pointer: it must never intercept a click.
- */
-const STYLES = `
-:host {
-  all: initial;
-  position: fixed;
-  inset: 0;
-  display: block;
-  pointer-events: none;
-  z-index: ${String(PICKER_Z_INDEX)};
-  contain: layout style;
-}
-
-.box {
-  position: absolute;
-  box-sizing: border-box;
-  border: 2px solid #2563eb;
-  background: rgba(37, 99, 235, 0.12);
-  border-radius: 2px;
-  transition:
-    top 150ms ease-out,
-    left 150ms ease-out,
-    width 150ms ease-out,
-    height 150ms ease-out;
-}
-
-.label {
-  position: absolute;
-  box-sizing: border-box;
-  max-width: 40ch;
-  overflow: hidden;
-  padding: 2px 6px;
-  border-radius: 3px;
-  background: #0b1220;
-  color: #ffffff;
-  font:
-    12px/1.4 system-ui,
-    "Segoe UI",
-    sans-serif;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .box {
-    transition: none;
-  }
-}
-
-@media (forced-colors: active) {
-  .box {
-    border-color: Highlight;
-    background: transparent;
-  }
-
-  .label {
-    background: Canvas;
-    color: CanvasText;
-    border: 1px solid CanvasText;
-    forced-color-adjust: none;
-  }
-}
-`;
-
 /** Distance between the highlight box and its label, in CSS pixels. */
 const LABEL_GAP = 4;
 const LABEL_HEIGHT = 20;
 
 export interface Overlay {
-  /** Root of the picker UI: excluded from selection and never read. */
-  readonly root: Element;
   show(element: Element, label: string): void;
   hide(): void;
-  destroy(): void;
 }
 
 /**
- * Create the highlight overlay.
+ * Highlight for the element under the pointer.
  *
  * Position comes from `getBoundingClientRect`, so the box uses viewport
  * coordinates and needs no scroll compensation.
  */
-export function createOverlay(doc: Document): Overlay {
-  const host = doc.createElement("div");
-  host.setAttribute("data-ui-target-picker", "overlay");
-  host.setAttribute("aria-hidden", "true");
-
-  const shadow = host.attachShadow({ mode: "open" });
-  const style = doc.createElement("style");
-  style.textContent = STYLES;
-
+export function createOverlay(doc: Document, shadow: ShadowRoot): Overlay {
   const box = doc.createElement("div");
-  box.className = "box";
+  box.className = "overlay-box";
   const label = doc.createElement("div");
-  label.className = "label";
-
-  shadow.append(style, box, label);
-  doc.body.append(host);
-
-  let visible = false;
-
-  function setVisible(next: boolean): void {
-    if (visible === next) {
-      return;
-    }
-    visible = next;
-    box.hidden = !next;
-    label.hidden = !next;
-  }
-
-  setVisible(false);
+  label.className = "overlay-label";
+  box.hidden = true;
+  label.hidden = true;
+  shadow.append(box, label);
 
   return {
-    root: host,
-
     show(element, text) {
       const rect = element.getBoundingClientRect();
       box.style.top = `${String(rect.top)}px`;
@@ -132,15 +35,13 @@ export function createOverlay(doc: Document): Overlay {
       label.style.top = `${String(above ? rect.top - LABEL_HEIGHT - LABEL_GAP : rect.bottom + LABEL_GAP)}px`;
       label.style.left = `${String(Math.max(0, rect.left))}px`;
 
-      setVisible(true);
+      box.hidden = false;
+      label.hidden = false;
     },
 
     hide() {
-      setVisible(false);
-    },
-
-    destroy() {
-      host.remove();
+      box.hidden = true;
+      label.hidden = true;
     },
   };
 }

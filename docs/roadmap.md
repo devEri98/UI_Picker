@@ -38,14 +38,14 @@ Stato corrente: review indipendente completata, finding deduplicati, correzioni 
 4. ~~Session store con limite configurabile.~~ **Fatto** — limite target, budget byte con riduzione deterministica e undo singolo.
 5. ~~Overlay e selezione browser.~~ **Fatto** — overlay in Shadow DOM, state machine del puntatore con soppressione del click applicativo, scorciatoie configurabili, controller con lifecycle, stato e subscriber.
 6. ~~Clipboard e gestione degli errori.~~ **Fatto** — `copy` single-flight con snapshot immediato, timeout di 10 secondi, esito tardivo ignorato, fallback sincrono ed errori tipizzati.
-7. Pannello accessibile.
+7. ~~Pannello accessibile.~~ **Fatto** — pannello flottante nello Shadow DOM del picker, trascinabile dalla testata e spostabile da tastiera, con schede espandibili, undo singolo, regioni live e posizione persistente.
 8. Adapter Angular.
 9. Demo Angular con attivazione development-only.
 10. Controllo automatico della build production.
 11. E2E Chrome ed Edge e verifica manuale dei flussi principali.
 12. Packaging e release `0.1.0-alpha`.
 
-Il contratto implementato è descritto in [`usage.md`](usage.md). Il prossimo slice verificabile è il punto 7: il pannello accessibile.
+Il contratto implementato è descritto in [`usage.md`](usage.md). Il prossimo slice verificabile è il punto 8: l'adapter Angular.
 
 ## Dopo l’MVP
 

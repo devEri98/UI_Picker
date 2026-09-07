@@ -73,20 +73,31 @@ describe("lifecycle", () => {
       targetCount: 0,
       maxTargets: 20,
       outputFormat: "text",
+      canUndo: false,
     });
     expect(document.querySelector("[data-ui-target-picker]")).toBeNull();
   });
 
-  it("mounts the overlay in an open shadow root on enable", () => {
+  it("mounts the overlay and the panel in an open shadow root on enable", () => {
     const controller = createPicker();
 
     expect(controller.enable()).toEqual({ ok: true });
 
-    const root = document.querySelector("[data-ui-target-picker]");
-    expect(root).not.toBeNull();
-    expect(root?.shadowRoot?.querySelector(".box")).not.toBeNull();
-    expect(root?.getAttribute("aria-hidden")).toBe("true");
+    const shadow = document.querySelector("[data-ui-target-picker]")?.shadowRoot;
+    expect(shadow?.querySelector(".overlay-box")).not.toBeNull();
+    expect(shadow?.querySelector('[role="complementary"]')?.getAttribute("aria-label")).toBe(
+      "UI Target Picker",
+    );
     expect(controller.getState().lifecycle).toBe("enabled");
+  });
+
+  it("can run without the panel", () => {
+    const controller = createPicker({ panel: false });
+    controller.enable();
+
+    const shadow = document.querySelector("[data-ui-target-picker]")?.shadowRoot;
+    expect(shadow?.querySelector(".overlay-box")).not.toBeNull();
+    expect(shadow?.querySelector(".panel")).toBeNull();
   });
 
   it("is idempotent on enable, disable and destroy", () => {
@@ -311,11 +322,11 @@ describe("overlay feedback", () => {
 
     pointer("pointermove", query("button"));
 
-    expect(shadow?.querySelector(".box")?.hasAttribute("hidden")).toBe(false);
-    expect(shadow?.querySelector(".label")?.textContent).toBe("button.btn.rail__item");
+    expect(shadow?.querySelector(".overlay-box")?.hasAttribute("hidden")).toBe(false);
+    expect(shadow?.querySelector(".overlay-label")?.textContent).toBe("button.btn.rail__item");
 
     key("keyup", "AltLeft");
-    expect(shadow?.querySelector(".box")?.hasAttribute("hidden")).toBe(true);
+    expect(shadow?.querySelector(".overlay-box")?.hasAttribute("hidden")).toBe(true);
   });
 
   it("shows only the tag under the strict preset", () => {
@@ -327,7 +338,7 @@ describe("overlay feedback", () => {
     pointer("pointermove", query("button"));
 
     expect(
-      document.querySelector("[data-ui-target-picker]")?.shadowRoot?.querySelector(".label")
+      document.querySelector("[data-ui-target-picker]")?.shadowRoot?.querySelector(".overlay-label")
         ?.textContent,
     ).toBe("button");
   });

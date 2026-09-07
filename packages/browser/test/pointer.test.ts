@@ -219,6 +219,26 @@ describe("installPointerCapture", () => {
     expect(nextDown.defaultPrevented).toBe(false);
   });
 
+  it("releases a stale suppression when a new sequence starts disarmed", () => {
+    const query = mount("<button>Salva</button>");
+    const button = query("button");
+    const applicationClick = vi.fn();
+    button.addEventListener("click", applicationClick);
+    const harness = install();
+
+    // A sequence that captured but whose click never arrived.
+    button.dispatchEvent(pointerEvent("pointerdown"));
+    button.dispatchEvent(pointerEvent("pointerup"));
+    harness.disarm();
+
+    button.dispatchEvent(pointerEvent("pointerdown"));
+    const click = mouseEvent("click");
+    button.dispatchEvent(click);
+
+    expect(click.defaultPrevented).toBe(false);
+    expect(applicationClick).toHaveBeenCalledTimes(1);
+  });
+
   it("stops intercepting after dispose", () => {
     const query = mount("<button>Salva</button>");
     const button = query("button");
