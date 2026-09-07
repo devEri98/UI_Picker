@@ -36,7 +36,7 @@ Stato corrente: review indipendente completata, finding deduplicati, correzioni 
 2. ~~Schema `UiTarget` v1 e formatter deterministici.~~ **Fatto** — `core`: schema, canonical JSON, formatter testo e JSON.
 3. ~~Estrazione DOM e redazione indipendenti dal framework.~~ **Fatto** — `core`: policy e motore di redazione; `browser`: firma, percorso DOM, semantica, testo con boundary sensibili e geometria.
 4. ~~Session store con limite configurabile.~~ **Fatto** — limite target, budget byte con riduzione deterministica e undo singolo.
-5. Overlay e selezione browser.
+5. ~~Overlay e selezione browser.~~ **Fatto** — overlay in Shadow DOM, state machine del puntatore con soppressione del click applicativo, scorciatoie configurabili, controller con lifecycle, stato e subscriber.
 6. Clipboard e gestione degli errori.
 7. Pannello accessibile.
 8. Adapter Angular.
@@ -45,7 +45,7 @@ Stato corrente: review indipendente completata, finding deduplicati, correzioni 
 11. E2E Chrome ed Edge e verifica manuale dei flussi principali.
 12. Packaging e release `0.1.0-alpha`.
 
-Il contratto implementato è descritto in [`usage.md`](usage.md). Il prossimo slice verificabile è il punto 5: overlay, state machine del puntatore e scorciatoie.
+Il contratto implementato è descritto in [`usage.md`](usage.md). Il prossimo slice verificabile è il punto 6: `copy` single-flight, timeout e fallback della clipboard.
 
 ## Dopo l’MVP
 

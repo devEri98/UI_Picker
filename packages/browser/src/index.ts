@@ -7,6 +7,20 @@ export {
   type SelectabilityOptions,
 } from "./boundaries.js";
 
+export {
+  createUiTargetPicker,
+  type ControllerDestroyedError,
+  type CopyState,
+  type Lifecycle,
+  type LifecycleResult,
+  type SelectionMode,
+  type StateListener,
+  type UiTargetPickerController,
+  type UiTargetPickerOptions,
+  type UiTargetPickerState,
+  type Unsubscribe,
+} from "./controller.js";
+
 export { escapeAttributeValue, escapeIdentifier } from "./css.js";
 
 export { buildDomPath, type DomPathResult } from "./extract/dom-path.js";
@@ -40,6 +54,28 @@ export {
 } from "./extract/semantics.js";
 
 export { collectVisibleText } from "./extract/visible-text.js";
+
+export { createOverlay, type Overlay } from "./overlay.js";
+
+export {
+  installPointerCapture,
+  PICKER_Z_INDEX,
+  type PointerCapture,
+  type PointerCaptureHandlers,
+} from "./pointer.js";
+
+export {
+  DEFAULT_SHORTCUTS,
+  EXIT_SELECTION_CODE,
+  isComposing,
+  isEditableEventSource,
+  matchesShortcut,
+  modifierForCode,
+  releasesHold,
+  resolveShortcuts,
+  type KeyboardShortcut,
+  type UiTargetPickerShortcuts,
+} from "./shortcuts.js";
 
 export {
   isValidAdapterName,

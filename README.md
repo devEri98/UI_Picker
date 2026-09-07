@@ -21,18 +21,14 @@ Lo scopo è ridurre l’ambiguità di richieste come “modifica il riquadro in 
 ## Cosa funziona oggi
 
 ```ts
-import { createTargetExtractor } from "@ui-target-picker/browser";
-import { createSessionStore, formatSession } from "@ui-target-picker/core";
+import { createUiTargetPicker } from "@ui-target-picker/browser";
+import { formatSession } from "@ui-target-picker/core";
 
-const extractor = createTargetExtractor({ privacy: { preset: "balanced" } });
-const session = createSessionStore();
+const picker = createUiTargetPicker();
+picker.enable();
 
-const result = extractor.extract(document.querySelector("button")!);
-if (result.ok) {
-  session.add(result.value);
-}
-
-const output = formatSession(session.getSession(), "text");
+// Tieni premuto Alt e clicca un elemento, oppure Ctrl+Shift+E per la selezione continua.
+const output = formatSession(picker.getSession(), "text");
 ```
 
 ```text
@@ -48,9 +44,9 @@ riferimenti:  data-testid="group-toggle"
 box:          353x54 px @ x:413, y:588 - viewport 1920x945
 ```
 
-Implementato: schema `UiTarget` v1, normalizzazione, policy privacy `balanced`/`strict`, redattore personalizzato, session store con limiti e undo, formatter testo e JSON deterministici, estrazione DOM con boundary sensibili e contratto del resolver di componente.
+Implementato: schema `UiTarget` v1, normalizzazione, policy privacy `balanced`/`strict`, redattore personalizzato, session store con limiti e undo, formatter testo e JSON deterministici, estrazione DOM con boundary sensibili, contratto del resolver di componente, overlay in Shadow DOM, selezione con puntatore e tastiera e controller con lifecycle, stato e subscriber.
 
-Da fare: overlay e selezione con puntatore e tastiera, pannello accessibile, clipboard, adapter Angular, demo e gate della build production.
+Da fare: copia negli appunti, pannello accessibile, adapter Angular, demo e gate della build production.
 
 Dettagli in [Uso della libreria](docs/usage.md).
 

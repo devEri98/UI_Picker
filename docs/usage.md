@@ -1,6 +1,6 @@
 # Uso della libreria
 
-> Stato: **fatto**. Documenta l’API realmente implementata nei package `core` e `browser`. Overlay, pannello, clipboard e adapter Angular non sono ancora implementati.
+> Stato: **fatto**. Documenta l’API realmente implementata nei package `core` e `browser`. Pannello, clipboard e adapter Angular non sono ancora implementati.
 
 ## Cosa è disponibile oggi
 
@@ -13,11 +13,61 @@
 | Formatter testo e JSON deterministici | `core` | Implementato |
 | Estrazione DOM (firma, percorso, semantica, testo, geometria) | `browser` | Implementato |
 | Contratto e validazione del resolver di componente | `browser` | Implementato |
-| Overlay, selezione puntatore e scorciatoie | `browser` | Da fare |
-| Pannello accessibile e clipboard | `browser` | Da fare |
+| Controller con lifecycle, stato e subscriber | `browser` | Implementato |
+| Overlay in Shadow DOM e selezione con puntatore | `browser` | Implementato |
+| Scorciatoie configurabili e cattura da tastiera | `browser` | Implementato |
+| Copia negli appunti (`copy`) | `browser` | Da fare |
+| Pannello accessibile | `browser` | Da fare |
 | Adapter Angular | `angular` | Da fare |
 
-## Esempio minimo
+## Picker completo
+
+```ts
+import { createUiTargetPicker } from "@ui-target-picker/browser";
+import { formatSession } from "@ui-target-picker/core";
+
+const picker = createUiTargetPicker({ maxTargets: 20 });
+
+picker.subscribe((state) => {
+  console.log(state.selectionMode, `${String(state.targetCount)}/${String(state.maxTargets)}`);
+  if (state.lastError !== undefined) {
+    console.warn(state.lastError.code);
+  }
+});
+
+picker.enable();
+
+// Su richiesta esplicita dell'utente:
+const output = formatSession(picker.getSession(), "text");
+
+// Alla chiusura dell'ambiente di sviluppo:
+picker.destroy();
+```
+
+`createUiTargetPicker` non installa nessun listener finché non chiami `enable`, e l’import del modulo non ha side effect. `enable`, `disable` e `destroy` sono idempotenti; dopo `destroy` il controller non è riattivabile, la sessione è vuota e i subscriber sono rimossi.
+
+Il metodo `copy` previsto dal contratto API arriverà con lo slice clipboard: per ora l’output si ottiene passando `getSession()` a `formatSession`.
+
+### Scorciatoie
+
+| Azione | Default | Comportamento |
+|---|---|---|
+| Selezione temporanea | tieni premuto `Alt` | Vale finché il tasto resta premuto; la prima cattura disarma. |
+| Selezione continua | `Ctrl+Shift+E` | Toggle; ogni click valido cattura. |
+| Cattura elemento focalizzato | `Ctrl+Shift+Invio` | Cattura `document.activeElement` se selezionabile. |
+| Esci dalla selezione | `Esc` | Non cancella la sessione. |
+
+Le scorciatoie sono configurabili tramite `options.shortcuts`; una combinazione invalida o duplicata rende invalida l’inizializzazione. Non si attivano durante una composizione IME né quando l’evento arriva da un campo editabile.
+
+La selezione temporanea torna sempre a `inactive` al rilascio del tasto, su `window.blur`, su documento nascosto e su `destroy`, e non viene mai riarmata automaticamente.
+
+### Selezione e click applicativo
+
+Durante la cattura, la sequenza `pointerdown` → `pointerup` → `click` viene soppressa in fase capture su `window`: l’azione nativa e i listener applicativi sul target non vengono eseguiti. Il limite dichiarato è che un listener capture registrato su `window` **prima** dell’abilitazione del picker non può essere annullato.
+
+Overlay e pannello vivono in uno Shadow DOM `open` con `pointer-events: none` e non sono mai selezionabili.
+
+## Estrazione singola
 
 ```ts
 import { createTargetExtractor } from "@ui-target-picker/browser";
@@ -44,7 +94,7 @@ function capture(element: Element): void {
 const output = formatSession(session.getSession(), "text");
 ```
 
-`createTargetExtractor` valida la configurazione una sola volta: un valore fuori contratto lancia `InvalidConfigurationError` invece di essere corretto in silenzio.
+Usa l’estrattore direttamente quando ti serve la cattura senza UI. `createTargetExtractor` valida la configurazione una sola volta: un valore fuori contratto lancia `InvalidConfigurationError` invece di essere corretto in silenzio.
 
 ## Opzioni di estrazione
 
