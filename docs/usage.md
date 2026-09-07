@@ -1,6 +1,6 @@
 # Uso della libreria
 
-> Stato: **fatto**. Documenta l’API realmente implementata nei package `core` e `browser`. Pannello, clipboard e adapter Angular non sono ancora implementati.
+> Stato: **fatto**. Documenta l’API realmente implementata nei package `core` e `browser`. Pannello e adapter Angular non sono ancora implementati.
 
 ## Cosa è disponibile oggi
 
@@ -16,7 +16,7 @@
 | Controller con lifecycle, stato e subscriber | `browser` | Implementato |
 | Overlay in Shadow DOM e selezione con puntatore | `browser` | Implementato |
 | Scorciatoie configurabili e cattura da tastiera | `browser` | Implementato |
-| Copia negli appunti (`copy`) | `browser` | Da fare |
+| Copia negli appunti single-flight con timeout | `browser` | Implementato |
 | Pannello accessibile | `browser` | Da fare |
 | Adapter Angular | `angular` | Da fare |
 
@@ -46,7 +46,32 @@ picker.destroy();
 
 `createUiTargetPicker` non installa nessun listener finché non chiami `enable`, e l’import del modulo non ha side effect. `enable`, `disable` e `destroy` sono idempotenti; dopo `destroy` il controller non è riattivabile, la sessione è vuota e i subscriber sono rimossi.
 
-Il metodo `copy` previsto dal contratto API arriverà con lo slice clipboard: per ora l’output si ottiene passando `getSession()` a `formatSession`.
+`copy` scrive negli appunti il formato corrente, oppure quello passato come argomento; `setOutputFormat` cambia il formato predefinito senza toccare i target.
+
+### Copia
+
+```ts
+const result = await picker.copy(); // oppure picker.copy("json")
+
+if (result.ok) {
+  console.log(`Copiati ${String(result.targetCount)} target in formato ${result.format}`);
+} else {
+  console.warn(result.error.code);
+}
+```
+
+| Comportamento | Regola |
+|---|---|
+| Snapshot | Sessione, formato e conteggio sono catturati all’avvio del comando: una cattura che arriva mentre la Promise è pendente non cambia ciò che viene copiato. |
+| Single-flight | Una sola copia pendente. Mentre `copyState` è `pending` una seconda chiamata restituisce `COPY_IN_PROGRESS`. |
+| Timeout | Dopo 10 secondi senza esito il controller torna `idle`, restituisce `COPY_TIMEOUT` e ignora il completamento tardivo. |
+| Reject | Un errore riporta sempre lo stato a `idle`. |
+| `destroy` durante la copia | La Promise può risolversi ma non aggiorna stato, subscriber o sessione. |
+| Sessione vuota | Non sovrascrive la clipboard: restituisce `ok` con `targetCount: 0`. |
+
+Codici di errore: `COPY_IN_PROGRESS`, `COPY_TIMEOUT`, `CLIPBOARD_DENIED`, `CLIPBOARD_UNAVAILABLE`, `CONTROLLER_DESTROYED`.
+
+La strategia di scrittura è `navigator.clipboard.writeText` e, se manca o rifiuta, un fallback sincrono con `document.execCommand("copy")` su una textarea temporanea rimossa subito. Il fallback copia esattamente lo stesso testo redatto e ripristina il focus: una copia riuscita non sposta il focus. Quando nessuno dei due funziona l’errore distingue permesso negato da clipboard non disponibile, così il pannello potrà offrire la selezione manuale.
 
 ### Scorciatoie
 

@@ -2,7 +2,9 @@ import {
   createEmptySession,
   createSessionStore,
   deepFreeze,
+  formatSession,
   resolvePrivacyPolicy,
+  type CopyError,
   type OutputFormat,
   type PickerError,
   type PrivacyPolicy,
@@ -10,6 +12,7 @@ import {
 } from "@ui-target-picker/core";
 
 import { isSelectableTarget } from "./boundaries.js";
+import { ClipboardWriteError, createClipboardWriter, type ClipboardWriter } from "./clipboard.js";
 import { createTargetExtractor, type TargetExtractor } from "./extract/index.js";
 import { readTag, significantClasses } from "./extract/element.js";
 import { createOverlay, type Overlay } from "./overlay.js";
@@ -47,6 +50,10 @@ export type ControllerDestroyedError = {
 export type LifecycleResult =
   { readonly ok: true } | { readonly ok: false; readonly error: ControllerDestroyedError };
 
+export type CopyResult =
+  | { readonly ok: true; readonly format: OutputFormat; readonly targetCount: number }
+  | { readonly ok: false; readonly error: CopyError };
+
 export type StateListener = (state: Readonly<UiTargetPickerState>) => void;
 export type Unsubscribe = () => void;
 
@@ -61,6 +68,8 @@ export interface UiTargetPickerOptions {
   readonly excludedClassPrefixes?: readonly string[];
   readonly sensitiveSelectors?: readonly string[];
   readonly now?: () => Date;
+  /** Clipboard implementation; defaults to the browser one. Injected in tests. */
+  readonly clipboard?: ClipboardWriter;
 }
 
 export interface UiTargetPickerController {
@@ -69,8 +78,14 @@ export interface UiTargetPickerController {
   destroy(): LifecycleResult;
   getState(): Readonly<UiTargetPickerState>;
   getSession(): Readonly<UiTargetSessionV1>;
+  /** Selects the format used by `copy` when it is called without one. */
+  setOutputFormat(format: OutputFormat): LifecycleResult;
+  copy(format?: OutputFormat): Promise<CopyResult>;
   subscribe(listener: StateListener): Unsubscribe;
 }
+
+/** A copy without an outcome after this long is abandoned. */
+export const COPY_TIMEOUT_MS = 10_000;
 
 const DESTROYED: LifecycleResult = {
   ok: false,
@@ -101,7 +116,7 @@ export function createUiTargetPicker(
 ): UiTargetPickerController {
   const doc = resolveDocument(options.document);
   const shortcuts = resolveShortcuts(options.shortcuts);
-  const outputFormat = options.initialFormat ?? "text";
+  let outputFormat = options.initialFormat ?? "text";
 
   if (!OUTPUT_FORMATS.includes(outputFormat)) {
     throw new Error(`initialFormat must be one of ${OUTPUT_FORMATS.join(", ")}`);
@@ -132,8 +147,13 @@ export function createUiTargetPicker(
     return extractor;
   }
 
+  const clipboard = options.clipboard ?? createClipboardWriter(doc);
+
   let lifecycle: Lifecycle = "created";
   let selectionMode: SelectionMode = "inactive";
+  let copyState: CopyState = "idle";
+  /** Invalidates the outcome of a copy that timed out or outlived the controller. */
+  let copyToken = 0;
   let lastError: PickerError | undefined;
   let overlay: Overlay | undefined;
   let pointer: PointerCapture | undefined;
@@ -144,7 +164,7 @@ export function createUiTargetPicker(
     return deepFreeze<UiTargetPickerState>({
       lifecycle,
       selectionMode,
-      copyState: "idle",
+      copyState,
       targetCount: session.size(),
       maxTargets: session.maxTargets,
       outputFormat,
@@ -157,7 +177,9 @@ export function createUiTargetPicker(
     if (
       next.lifecycle === state.lifecycle &&
       next.selectionMode === state.selectionMode &&
+      next.copyState === state.copyState &&
       next.targetCount === state.targetCount &&
+      next.outputFormat === state.outputFormat &&
       next.lastError === state.lastError
     ) {
       return;
@@ -309,6 +331,65 @@ export function createUiTargetPicker(
     doc.removeEventListener("visibilitychange", onVisibilityChange);
   }
 
+  function copyErrorFor(error: unknown): CopyError {
+    if (error instanceof ClipboardWriteError && error.reason === "denied") {
+      return { code: "CLIPBOARD_DENIED", recoverable: true };
+    }
+    return { code: "CLIPBOARD_UNAVAILABLE", recoverable: true };
+  }
+
+  /**
+   * Single-flight copy.
+   *
+   * The command snapshots session, format and count immediately, so a capture
+   * arriving while the promise is pending cannot change what was copied.
+   */
+  async function runCopy(format: OutputFormat, text: string, count: number): Promise<CopyResult> {
+    const token = ++copyToken;
+    copyState = "pending";
+    emit();
+
+    const view = doc.defaultView;
+    let timer: ReturnType<Window["setTimeout"]> | undefined;
+    const expiry = new Promise<"timeout">((resolve) => {
+      timer = view?.setTimeout(() => {
+        resolve("timeout");
+      }, COPY_TIMEOUT_MS);
+    });
+
+    const attempt = clipboard.write(text).then(
+      () => "written" as const,
+      (error: unknown) => copyErrorFor(error),
+    );
+
+    const outcome = await Promise.race([attempt, expiry]);
+    if (timer !== undefined) {
+      view?.clearTimeout(timer);
+    }
+
+    // A newer command, a timeout or destroy already settled this one.
+    if (token !== copyToken) {
+      return { ok: false, error: { code: "COPY_TIMEOUT", recoverable: true } };
+    }
+    copyToken += 1;
+    copyState = "idle";
+
+    if (outcome === "timeout") {
+      lastError = { code: "COPY_TIMEOUT", recoverable: true };
+      emit();
+      return { ok: false, error: lastError };
+    }
+    if (outcome !== "written") {
+      lastError = outcome;
+      emit();
+      return { ok: false, error: outcome };
+    }
+
+    lastError = undefined;
+    emit();
+    return { ok: true, format, targetCount: count };
+  }
+
   function teardown(): void {
     const view = doc.defaultView;
     if (view !== null) {
@@ -362,6 +443,9 @@ export function createUiTargetPicker(
       }
       teardown();
       session.clear();
+      // A copy still in flight must not report into a destroyed controller.
+      copyToken += 1;
+      copyState = "idle";
       lifecycle = "destroyed";
       lastError = undefined;
       state = buildState();
@@ -375,6 +459,42 @@ export function createUiTargetPicker(
 
     getSession() {
       return lifecycle === "destroyed" ? createEmptySession() : session.getSession();
+    },
+
+    setOutputFormat(format) {
+      if (lifecycle === "destroyed") {
+        return DESTROYED;
+      }
+      if (!OUTPUT_FORMATS.includes(format)) {
+        throw new Error(`format must be one of ${OUTPUT_FORMATS.join(", ")}`);
+      }
+      // Changing the format never touches the captured targets.
+      outputFormat = format;
+      emit();
+      return OK;
+    },
+
+    async copy(format) {
+      if (lifecycle === "destroyed") {
+        return { ok: false, error: { code: "CONTROLLER_DESTROYED", recoverable: false } };
+      }
+      if (copyState === "pending") {
+        return { ok: false, error: { code: "COPY_IN_PROGRESS", recoverable: true } };
+      }
+
+      const chosen = format ?? outputFormat;
+      if (!OUTPUT_FORMATS.includes(chosen)) {
+        throw new Error(`format must be one of ${OUTPUT_FORMATS.join(", ")}`);
+      }
+
+      const snapshot = session.getSession();
+      const targetCount = snapshot.targets.length;
+      if (targetCount === 0) {
+        // An empty session must not overwrite whatever the user already has.
+        return { ok: true, format: chosen, targetCount: 0 };
+      }
+
+      return runCopy(chosen, formatSession(snapshot, chosen), targetCount);
     },
 
     subscribe(listener) {

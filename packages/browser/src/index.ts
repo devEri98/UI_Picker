@@ -8,8 +8,17 @@ export {
 } from "./boundaries.js";
 
 export {
+  ClipboardWriteError,
+  createClipboardWriter,
+  type ClipboardFailureReason,
+  type ClipboardWriter,
+} from "./clipboard.js";
+
+export {
+  COPY_TIMEOUT_MS,
   createUiTargetPicker,
   type ControllerDestroyedError,
+  type CopyResult,
   type CopyState,
   type Lifecycle,
   type LifecycleResult,
