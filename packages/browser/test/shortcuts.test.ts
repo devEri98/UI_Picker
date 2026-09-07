@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import {
+  codeMatches,
   DEFAULT_SHORTCUTS,
   isComposing,
   isEditableEventSource,
@@ -75,6 +76,39 @@ describe("matchesShortcut", () => {
       true,
     );
     expect(matchesShortcut(new KeyboardEvent("keydown", { code: "KeyE" }), shortcut)).toBe(false);
+  });
+});
+
+describe("events without a physical code", () => {
+  it("falls back to key so synthetic and virtual keyboards still match", () => {
+    expect(
+      matchesShortcut(new KeyboardEvent("keydown", { key: "e", ctrlKey: true, shiftKey: true }), {
+        code: "KeyE",
+        ctrl: true,
+        shift: true,
+      }),
+    ).toBe(true);
+    expect(
+      matchesShortcut(
+        new KeyboardEvent("keydown", { key: "Enter", ctrlKey: true, shiftKey: true }),
+        {
+          code: "Enter",
+          ctrl: true,
+          shift: true,
+        },
+      ),
+    ).toBe(true);
+    expect(matchesShortcut(new KeyboardEvent("keydown", { key: "Alt" }), { code: "AltLeft" })).toBe(
+      true,
+    );
+    expect(codeMatches(new KeyboardEvent("keydown", { key: "Escape" }), "Escape")).toBe(true);
+  });
+
+  it("still refuses a key that stands for another code", () => {
+    expect(codeMatches(new KeyboardEvent("keydown", { key: "a" }), "KeyE")).toBe(false);
+    expect(
+      matchesShortcut(new KeyboardEvent("keydown", { key: "Control" }), { code: "AltLeft" }),
+    ).toBe(false);
   });
 });
 

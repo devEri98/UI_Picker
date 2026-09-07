@@ -1,0 +1,10 @@
+{
+  "name": "@ui-target-picker/playground",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Zero-dependency browser playground for manual verification of the picker.",
+  "scripts": {
+    "start": "node serve.mjs"
+  }
+}

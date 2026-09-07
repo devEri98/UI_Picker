@@ -49,6 +49,14 @@ Da fare: pannello accessibile, adapter Angular, demo e gate della build producti
 
 Dettagli in [Uso della libreria](docs/usage.md).
 
+## Provalo
+
+```bash
+pnpm install && pnpm build && pnpm demo
+```
+
+Apre un playground su `http://127.0.0.1:4173`: un'applicazione finta con componenti annidati, campi sensibili e nodi nascosti, più una console che mostra stato, sessione e output in tempo reale. La pagina carica `packages/*/dist` direttamente tramite import map, senza bundler.
+
 ## Sviluppo
 
 ```bash

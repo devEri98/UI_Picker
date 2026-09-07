@@ -19,6 +19,7 @@ import { createOverlay, type Overlay } from "./overlay.js";
 import { installPointerCapture, type PointerCapture } from "./pointer.js";
 import type { ComponentResolver } from "./resolver.js";
 import {
+  codeMatches,
   EXIT_SELECTION_CODE,
   isComposing,
   isEditableEventSource,
@@ -278,7 +279,7 @@ export function createUiTargetPicker(
       setSelectionMode(selectionMode === "continuous" ? "inactive" : "continuous");
       return;
     }
-    if (event.code === EXIT_SELECTION_CODE && selectionMode !== "inactive") {
+    if (codeMatches(event, EXIT_SELECTION_CODE) && selectionMode !== "inactive") {
       // Leaving selection never clears the session.
       setSelectionMode("inactive");
       return;

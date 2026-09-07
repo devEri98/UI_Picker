@@ -41,4 +41,11 @@ export default tseslint.config(
       globals: globals.node,
     },
   },
+  {
+    // Browser entrypoint of an example: runs in the page, not in Node.
+    files: ["examples/*/main.mjs"],
+    languageOptions: {
+      globals: globals.browser,
+    },
+  },
 );

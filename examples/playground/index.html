@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UI Target Picker — playground</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --surface: #ffffff;
+        --surface-sunken: #f4f5f7;
+        --border: #d3d7de;
+        --text: #16181d;
+        --text-muted: #5b626e;
+        --accent: #2563eb;
+        --warn: #a45c00;
+        --danger: #b3261e;
+        --radius: 6px;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --surface: #171a1f;
+          --surface-sunken: #0f1115;
+          --border: #363b45;
+          --text: #eceef2;
+          --text-muted: #a0a7b4;
+          --accent: #6f9bff;
+          --warn: #e0a44a;
+          --danger: #ff8b83;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--surface-sunken);
+        color: var(--text);
+        font:
+          15px/1.5 system-ui,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: baseline;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: 17px;
+      }
+
+      header p {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+
+      main {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr);
+        align-items: start;
+        padding: 16px 24px 48px;
+      }
+
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      section {
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+      }
+
+      h2 {
+        margin: 0 0 12px;
+        font-size: 14px;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+
+      h3 {
+        margin: 20px 0 8px;
+        font-size: 15px;
+      }
+
+      button {
+        padding: 6px 12px;
+        min-height: 32px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .rail__groupheader {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        text-align: left;
+      }
+
+      .rail__grouplist {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 8px;
+      }
+
+      .badge {
+        padding: 1px 8px;
+        border-radius: 999px;
+        background: var(--surface-sunken);
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+      }
+
+      form {
+        display: grid;
+        gap: 10px;
+        max-width: 420px;
+      }
+
+      label {
+        display: grid;
+        gap: 4px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+
+      input,
+      select,
+      textarea {
+        padding: 6px 8px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+      }
+
+      [contenteditable] {
+        padding: 6px 8px;
+        border: 1px dashed var(--border);
+        border-radius: var(--radius);
+      }
+
+      dl {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 4px 12px;
+        margin: 0 0 12px;
+        font-size: 14px;
+      }
+
+      dt {
+        color: var(--text-muted);
+      }
+
+      dd {
+        margin: 0;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      fieldset {
+        display: flex;
+        gap: 12px;
+        margin: 0;
+        padding: 4px 10px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+
+      legend {
+        padding: 0 4px;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      fieldset label {
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+        color: var(--text);
+      }
+
+      pre {
+        margin: 0;
+        padding: 12px;
+        max-height: 380px;
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface-sunken);
+        font:
+          12px/1.5 ui-monospace,
+          "Cascadia Mono",
+          Consolas,
+          monospace;
+        white-space: pre;
+      }
+
+      .feedback {
+        margin: 10px 0 0;
+        min-height: 20px;
+        font-size: 13px;
+      }
+
+      .feedback[data-tone="error"] {
+        color: var(--danger);
+      }
+
+      .feedback[data-tone="warn"] {
+        color: var(--warn);
+      }
+
+      kbd {
+        padding: 1px 5px;
+        border: 1px solid var(--border);
+        border-bottom-width: 2px;
+        border-radius: 4px;
+        background: var(--surface-sunken);
+        font-size: 12px;
+      }
+
+      .hint {
+        margin: 0 0 12px;
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>UI Target Picker — playground</h1>
+      <p>
+        Tieni premuto <kbd>Alt</kbd> e clicca, oppure <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd>
+        per la selezione continua. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Invio</kbd> cattura
+        l'elemento con il focus, <kbd>Esc</kbd> esce.
+      </p>
+    </header>
+
+    <main>
+      <section data-component="ImportPage" aria-labelledby="app-title">
+        <h2 id="app-title">Applicazione di prova</h2>
+        <p class="hint">
+          Un'app finta con componenti annidati, campi sensibili e nodi nascosti. I valori marcati
+          <code>CANARY</code> non devono comparire mai nell'output.
+        </p>
+
+        <div data-component="ImportProblems">
+          <h3>Problemi di importazione</h3>
+          <ul class="rail__grouplist">
+            <li data-testid="group">
+              <button
+                type="button"
+                class="rail__groupheader"
+                data-testid="group-toggle"
+                aria-expanded="false"
+                aria-label="Apri il gruppo Brand non riconosciuto"
+              >
+                <span>Brand non riconosciuto</span>
+                <span class="badge">1 riga</span>
+              </button>
+            </li>
+            <li data-testid="group">
+              <button
+                type="button"
+                class="rail__groupheader"
+                data-testid="group-toggle"
+                aria-expanded="true"
+              >
+                <span>Codice articolo mancante</span>
+                <span class="badge">4 righe</span>
+              </button>
+            </li>
+          </ul>
+
+          <table>
+            <caption class="hint">
+              Righe scartate
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Riga</th>
+                <th scope="col">Motivo</th>
+                <th scope="col">Azione</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>12</td>
+                <td>Brand sconosciuto</td>
+                <td><button type="button" data-testid="fix-row">Correggi</button></td>
+              </tr>
+              <tr>
+                <td>18</td>
+                <td>Quantità non valida</td>
+                <td><button type="button" data-testid="fix-row">Correggi</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div data-component="CredentialsForm">
+          <h3>Campi sensibili</h3>
+          <form>
+            <label>
+              Utente
+              <input type="text" name="username" value="CANARY_USERNAME" />
+            </label>
+            <label>
+              Password
+              <input type="password" name="password" value="CANARY_PASSWORD" />
+            </label>
+            <label>
+              Note
+              <textarea name="note" rows="2">CANARY_TEXTAREA</textarea>
+            </label>
+            <label>
+              Brand
+              <select name="brand">
+                <option value="CANARY_OPTION">CANARY_OPTION_LABEL</option>
+              </select>
+            </label>
+            <label>
+              Commento libero
+              <div contenteditable="true" role="textbox" aria-label="Commento libero">
+                CANARY_EDITABLE
+              </div>
+            </label>
+            <button type="button" disabled>Salva (disabilitato)</button>
+          </form>
+          <p hidden>CANARY_HIDDEN</p>
+          <p aria-hidden="true">CANARY_ARIA_HIDDEN</p>
+        </div>
+      </section>
+
+      <section aria-labelledby="console-title">
+        <h2 id="console-title">Console del picker</h2>
+
+        <dl>
+          <dt>lifecycle</dt>
+          <dd data-state="lifecycle">—</dd>
+          <dt>selezione</dt>
+          <dd data-state="selectionMode">—</dd>
+          <dt>copia</dt>
+          <dd data-state="copyState">—</dd>
+          <dt>target</dt>
+          <dd data-state="targetCount">—</dd>
+        </dl>
+
+        <div class="controls">
+          <button type="button" data-action="toggle">Disattiva picker</button>
+          <button type="button" data-action="copy">Copia tutto</button>
+          <fieldset>
+            <legend>Formato</legend>
+            <label><input type="radio" name="format" value="text" checked /> Testo</label>
+            <label><input type="radio" name="format" value="json" /> JSON</label>
+          </fieldset>
+        </div>
+
+        <p class="hint">
+          Questa console fa parte dell'applicazione ospitante, non del picker: in selezione continua
+          anche i suoi controlli vengono catturati. Premi <kbd>Esc</kbd> prima di usarli.
+        </p>
+
+        <pre data-output>Nessun target. Tieni premuto Alt e seleziona un elemento.</pre>
+        <p class="feedback" data-feedback role="status" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "@ui-target-picker/core": "/packages/core/dist/index.js",
+          "@ui-target-picker/browser": "/packages/browser/dist/index.js"
+        }
+      }
+    </script>
+    <script type="module" src="./main.mjs"></script>
+  </body>
+</html>

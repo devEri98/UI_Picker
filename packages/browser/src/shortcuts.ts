@@ -45,8 +45,55 @@ const MODIFIER_CODES = new Map<string, ModifierName>([
   ["MetaRight", "meta"],
 ]);
 
+/** Modifier key names, for events that carry `key` but no `code`. */
+const MODIFIER_KEYS = new Map<string, ModifierName>([
+  ["Alt", "alt"],
+  ["Control", "ctrl"],
+  ["Shift", "shift"],
+  ["Meta", "meta"],
+]);
+
 export function modifierForCode(code: string): ModifierName | undefined {
   return MODIFIER_CODES.get(code);
+}
+
+/**
+ * The `key` value a physical `code` produces on a US layout.
+ *
+ * Only used as a fallback: see `codeMatches`.
+ */
+function impliedKey(code: string): string | undefined {
+  if (code.startsWith("Key")) {
+    return code.slice(3).toLowerCase();
+  }
+  if (code.startsWith("Digit")) {
+    return code.slice(5);
+  }
+  if (code === "Space") {
+    return " ";
+  }
+  return code === "Enter" || code === "Escape" || code === "Tab" ? code.toLowerCase() : undefined;
+}
+
+/**
+ * Compare an event against a configured `code`.
+ *
+ * `code` is the contract, because it survives keyboard layout changes. Some
+ * event sources leave it empty though - synthetic events, a few virtual
+ * keyboards and automation tools - and there `key` is the only thing left to
+ * match on.
+ */
+export function codeMatches(event: KeyboardEvent, code: string): boolean {
+  if (event.code.length > 0) {
+    return event.code === code;
+  }
+  const implied = impliedKey(code);
+  return implied !== undefined && event.key.toLowerCase() === implied;
+}
+
+/** The modifier an event stands for, whether it reports `code` or only `key`. */
+function eventModifier(event: KeyboardEvent): ModifierName | undefined {
+  return event.code.length > 0 ? MODIFIER_CODES.get(event.code) : MODIFIER_KEYS.get(event.key);
 }
 
 const SHORTCUT_KEYS = ["temporarySelection", "continuousSelection", "captureFocused"] as const;
@@ -168,10 +215,10 @@ export function isComposing(event: KeyboardEvent): boolean {
 export function matchesShortcut(event: KeyboardEvent, shortcut: KeyboardShortcut): boolean {
   const modifier = modifierForCode(shortcut.code);
   if (modifier !== undefined) {
-    return modifierForCode(event.code) === modifier;
+    return eventModifier(event) === modifier;
   }
   return (
-    event.code === shortcut.code &&
+    codeMatches(event, shortcut.code) &&
     event.altKey === (shortcut.alt ?? false) &&
     event.ctrlKey === (shortcut.ctrl ?? false) &&
     event.shiftKey === (shortcut.shift ?? false) &&
@@ -183,9 +230,9 @@ export function matchesShortcut(event: KeyboardEvent, shortcut: KeyboardShortcut
 export function releasesHold(event: KeyboardEvent, shortcut: KeyboardShortcut): boolean {
   const modifier = modifierForCode(shortcut.code);
   if (modifier === undefined) {
-    return event.code === shortcut.code;
+    return codeMatches(event, shortcut.code);
   }
-  if (modifierForCode(event.code) === modifier) {
+  if (eventModifier(event) === modifier) {
     return true;
   }
   const stillPressed = {

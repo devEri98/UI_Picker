@@ -74,6 +74,7 @@ export {
 } from "./pointer.js";
 
 export {
+  codeMatches,
   DEFAULT_SHORTCUTS,
   EXIT_SELECTION_CODE,
   isComposing,

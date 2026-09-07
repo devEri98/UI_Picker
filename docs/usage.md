@@ -20,6 +20,16 @@
 | Pannello accessibile | `browser` | Da fare |
 | Adapter Angular | `angular` | Da fare |
 
+## Playground
+
+```bash
+pnpm build && pnpm demo
+```
+
+`examples/playground` è un banco di verifica manuale senza dipendenze: un server statico di Node serve la workspace e la pagina carica l’ESM di `packages/*/dist` tramite import map, quindi prova anche che l’output pubblicato giri senza bundler. La console della pagina espone `globalThis.uiTargetPicker` per l’ispezione manuale.
+
+La console della demo fa parte dell’applicazione ospitante, non del picker: in selezione continua anche i suoi controlli vengono catturati. Finché il pannello non esiste, esci con `Esc` prima di usarli.
+
 ## Picker completo
 
 ```ts

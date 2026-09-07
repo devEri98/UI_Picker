@@ -11,6 +11,7 @@
   "scripts": {
     "build": "tsc --build --pretty false",
     "clean": "tsc --build --clean",
+    "demo": "node examples/playground/serve.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
